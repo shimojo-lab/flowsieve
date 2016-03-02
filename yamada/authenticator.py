@@ -1,0 +1,82 @@
+"""
+Yamada 802.1X Authenticator
+"""
+
+from ryu.base import app_manager
+from ryu.controller import ofp_event
+from ryu.controller.handler import MAIN_DISPATCHER
+from ryu.controller.handler import set_ev_cls
+from ryu.ofproto import ofproto_v1_0
+from ryu.lib.packet import packet
+from ryu.lib.packet import ethernet
+
+from yamada import eap, eapol
+
+
+class Authenticator(app_manager.RyuApp):
+    OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
+
+    def __init__(self, *args, **kwargs):
+        super(Authenticator, self).__init__(*args, **kwargs)
+
+    @set_ev_cls(ofp_event.EventOFPStateChange, MAIN_DISPATCHER)
+    def _state_change_handler(self, ev):
+        datapath = ev.datapath
+        ofproto = datapath.ofproto
+        ofproto_parser = datapath.ofproto_parser
+
+        self.logger.info("Datapath %016x connected", datapath.id)
+
+        match = ofproto_parser.OFPMatch(dl_type=eapol.ETH_TYPE_EAPOL)
+        actions = [ofproto_parser.OFPActionOutput(ofproto.OFPP_CONTROLLER)]
+
+        mod = datapath.ofproto_parser.OFPFlowMod(
+            datapath=datapath, match=match, cookie=0,
+            command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
+            priority=0xffff,
+            flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
+        datapath.send_msg(mod)
+
+    @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
+    def _packet_in_handler(self, ev):
+        msg = ev.msg
+        datapath = msg.datapath
+        ofproto = datapath.ofproto
+        ofproto_parser = datapath.ofproto_parser
+        dpid = datapath.id
+
+        pkt = packet.Packet(msg.data)
+        eth = pkt.get_protocol(ethernet.ethernet)
+
+        if eth.ethertype != eapol.ETH_TYPE_EAPOL:
+            # Ignore packets other than EAPOL
+            return
+        dst = eth.dst
+        src = eth.src
+
+        self.logger.info("EAPOL packet in %s %s %s %s", dpid, src, dst, msg.in_port)
+
+        eapol_msg = pkt.get_protocol(eapol.eapol)
+        print eapol_msg
+
+        if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
+            resp = packet.Packet()
+            resp.add_protocol(ethernet.ethernet(src=dst,
+                                                dst=src,
+                                                ethertype=eapol.ETH_TYPE_EAPOL))
+            resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
+            resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
+                                      type_=eap.EAP_TYPE_IDENTIFY))
+            resp.serialize()
+
+            actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
+            out = ofproto_parser.OFPPacketOut(
+                datapath=datapath,
+                in_port=ofproto.OFPP_NONE,
+                actions=actions,
+                buffer_id=ofproto.OFP_NO_BUFFER,
+                data=resp.data)
+            datapath.send_msg(out)
+        elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:
+            eap_msg = pkt.get_protocol(eap.eap)
+            print eap_msg
