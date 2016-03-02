@@ -1,5 +1,6 @@
 import struct
 import random
+import os
 
 from ryu.lib import stringify
 from ryu.lib.packet import packet_base
@@ -52,7 +53,7 @@ class eap(packet_base.PacketBase):
         if code in [EAP_CODE_REQUEST, EAP_CODE_RESPONSE]:
             offset = eap._MIN_LEN
             type_buf = buf[offset:offset+eap._TYPE_LEN]
-            type_ = struct.unpack_from(eap._TYPE_PACK_STR, type_buf)[0]
+            (type_,) = struct.unpack_from(eap._TYPE_PACK_STR, type_buf)
             msg.type_ = type_
 
             offset += eap._TYPE_LEN
@@ -71,7 +72,7 @@ class eap(packet_base.PacketBase):
             self.length = eap._MIN_LEN
             if self.code in [EAP_CODE_REQUEST, EAP_CODE_RESPONSE]:
                 if self.data is not None:
-                    self.length += len(self.data)
+                    self.length += eap._TYPE_LEN + len(self.data)
 
         hdr = bytearray(struct.pack(self._PACK_STR, self.code, self.identifier,
                         self.length))
@@ -101,4 +102,30 @@ class eap_identify(stringify.StringifyMixin):
 
     def serialize(self):
         hdr = bytearray(self.identity.encode("utf-8"))
+        return hdr
+
+
+@eap.register_eap_type(EAP_TYPE_MD5_CHALLENGE)
+class eap_md5_challenge(stringify.StringifyMixin):
+    _PACK_STR = "!B"
+    _MIN_LEN = struct.calcsize(_PACK_STR)
+
+    def __init__(self, challenge=None):
+        super(eap_md5_challenge, self).__init__()
+        if challenge is None:
+            self.challenge = os.urandom(16)
+        else:
+            self.challenge = challenge
+
+    def __len__(self):
+        return eap_md5_challenge._MIN_LEN + len(self.challenge)
+
+    @classmethod
+    def parser(cls, buf):
+        (length,) = struct.unpack_from(cls._PACK_STR, buf)
+        return cls(buf[:length])
+
+    def serialize(self):
+        hdr = bytearray(struct.pack(eap_md5_challenge._PACK_STR, len(self.challenge)))
+        hdr += self.challenge
         return hdr
