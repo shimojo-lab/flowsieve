@@ -28,15 +28,18 @@ class eap(packet_base.PacketBase):
             return cls
         return _register_eap_type
 
-    def __init__(self, code=EAP_CODE_SUCCESS,
-                 identifier=random.randint(0x00, 0xff), length=0,
+    def __init__(self, code=EAP_CODE_SUCCESS, identifier=None, length=0,
                  type_=None, data=None):
         super(eap, self).__init__()
         self.code = code
-        self.identifier = identifier
         self.length = length
         self.type_ = type_
         self.data = data
+
+        if identifier is None:
+            self.identifier = random.randint(0x00, 0xff)
+        else:
+            self.identifier = identifier
 
     def __len__(self):
         return self.length
