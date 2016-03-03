@@ -2,9 +2,6 @@
 Yamada 802.1X Authenticator
 """
 
-import md5
-import struct
-
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, DEAD_DISPATCHER
@@ -13,15 +10,17 @@ from ryu.ofproto import ofproto_v1_0
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 
-from yamada import eap, eapol
+from yamada import eap, eapol, eap_md5_sm
 
 
 class Authenticator(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
+    _EVENTS = [eap_md5_sm.EventStartEAP, eap_md5_sm.EventStartEAPMD5Challenge,
+               eap_md5_sm.EventFinishEAPMD5Challenge]
 
     def __init__(self, *args, **kwargs):
         super(Authenticator, self).__init__(*args, **kwargs)
-        self.dps = {}
+        self._dps = {}
 
     def _install_eapol_flow(self, dp):
         ofproto = dp.ofproto
@@ -45,20 +44,18 @@ class Authenticator(app_manager.RyuApp):
             if dp.id is None:
                 return
             self.logger.info("Datapath %016x connected", dp.id)
-            self.dps[dp.id] = dp
+            self._dps[dp.id] = dp
             self._install_eapol_flow(dp)
         elif ev.state == DEAD_DISPATCHER:
             if dp.id is None:
                 return
-            if dp.id in self.dps:
-                del self.dps[dp.id]
+            if dp.id in self._dps:
+                del self._dps[dp.id]
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
         msg = ev.msg
         dp = msg.datapath
-        ofproto = dp.ofproto
-        ofproto_parser = dp.ofproto_parser
         dpid = dp.id
 
         pkt = packet.Packet(msg.data)
@@ -70,78 +67,46 @@ class Authenticator(app_manager.RyuApp):
         dst = eth.dst
         src = eth.src
 
-        self.logger.info("EAPOL packet in %s %s %s %s", dpid, src, dst, msg.in_port)
         print pkt
 
         eapol_msg = pkt.get_protocol(eapol.eapol)
 
-        if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
-            resp = packet.Packet()
-            resp.add_protocol(ethernet.ethernet(src=dst,
-                                                dst=src,
-                                                ethertype=eapol.ETH_TYPE_EAPOL))
-            resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
-            resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
-                                      type_=eap.EAP_TYPE_IDENTIFY))
-            print resp
-            resp.serialize()
+        sm_ev = None
 
-            actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
-            out = ofproto_parser.OFPPacketOut(
-                datapath=dp,
-                in_port=ofproto.OFPP_NONE,
-                actions=actions,
-                buffer_id=ofproto.OFP_NO_BUFFER,
-                data=resp.data)
-            dp.send_msg(out)
+        if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
+            sm_ev = eap_md5_sm.EventStartEAP(dpid, src, dst, msg.in_port)
 
         elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:
             eap_msg = pkt.get_protocol(eap.eap)
-            if eap_msg.code == eap.EAP_CODE_RESPONSE and eap_msg.type_ == eap.EAP_TYPE_IDENTIFY:
-                resp = packet.Packet()
-                resp.add_protocol(ethernet.ethernet(src=dst,
-                                                    dst=src,
-                                                    ethertype=eapol.ETH_TYPE_EAPOL))
-                resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
-                resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
-                                          type_=eap.EAP_TYPE_MD5_CHALLENGE,
-                                          data=eap.eap_md5_challenge(challenge="aaaaaaaaaaaaaaaa")))
-                print resp
-                resp.serialize()
+            if eap_msg.code == eap.EAP_CODE_RESPONSE:
 
-                actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
-                out = ofproto_parser.OFPPacketOut(
-                    datapath=dp,
-                    in_port=ofproto.OFPP_NONE,
-                    actions=actions,
-                    buffer_id=ofproto.OFP_NO_BUFFER,
-                    data=resp.data)
-                dp.send_msg(out)
-            if eap_msg.code == eap.EAP_CODE_RESPONSE and eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
-                m = md5.new()
-                m.update(struct.pack("!B", eap_msg.identifier))
-                m.update("TIS")
-                m.update("aaaaaaaaaaaaaaaa")
-                print repr(m.digest())
+                if eap_msg.type_ == eap.EAP_TYPE_IDENTIFY:
+                    sm_ev = eap_md5_sm.EventStartEAPMD5Challenge(
+                            dpid, msg.in_port, eap_msg.data.identity)
 
-                #  if m.digest() == eap_msg.data.challenge:
-                    #  result = eap.EAP_CODE_SUCCESS
-                #  else:
-                    #  result = eap.EAP_CODE_FAILURE
+                elif eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
+                    sm_ev = eap_md5_sm.EventFinishEAPMD5Challenge(
+                            dpid, msg.in_port, eap_msg.data.challenge,
+                            eap_msg.identifier)
 
-                resp = packet.Packet()
-                resp.add_protocol(ethernet.ethernet(src=dst,
-                                                    dst=src,
-                                                    ethertype=eapol.ETH_TYPE_EAPOL))
-                resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
-                resp.add_protocol(eap.eap(identifier=eap_msg.identifier, code=eap.EAP_CODE_SUCCESS))
-                resp.serialize()
+        if sm_ev is not None:
+            self.send_event_to_observers(sm_ev)
 
-                actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
-                out = ofproto_parser.OFPPacketOut(
-                    datapath=dp,
-                    in_port=ofproto.OFPP_NONE,
-                    actions=actions,
-                    buffer_id=ofproto.OFP_NO_BUFFER,
-                    data=resp.data)
-                dp.send_msg(out)
+    @set_ev_cls(eap_md5_sm.EventOutputEAPOL)
+    def _event_output_eapol_handler(self, ev):
+        ev.pkt.serialize()
+
+        dp = self._dps.get(ev.dpid)
+        if dp is None:
+            return
+        ofproto_parser = dp.ofproto_parser
+        ofproto = dp.ofproto
+
+        actions = [ofproto_parser.OFPActionOutput(ev.port)]
+        out = ofproto_parser.OFPPacketOut(
+            datapath=dp,
+            in_port=ofproto.OFPP_NONE,
+            actions=actions,
+            buffer_id=ofproto.OFP_NO_BUFFER,
+            data=ev.pkt.data)
+        dp.send_msg(out)
