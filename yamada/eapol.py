@@ -18,6 +18,8 @@ EAPOL_TYPE_ANNOUNCEMENT_REQUEST = 0x08
 
 
 class eapol(packet_base.PacketBase):
+    """Encoder/Decoder for EAPoL (EAP over LAN) packets
+    """
     _PACK_STR = "!BBH"
     _MIN_LEN = struct.calcsize(_PACK_STR)
 
