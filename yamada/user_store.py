@@ -59,16 +59,18 @@ class UserStore(app_manager.RyuApp):
         return True
 
 
-class Role():
+class Role(object):
 
     def __init__(self, name, allowed_hosts):
+        super(Role, self).__init__()
         self.name = name
         self.allowed_hosts = allowed_hosts
 
 
-class User():
+class User(object):
 
     def __init__(self, name, password, role):
+        super(User, self).__init__()
         self.name = name
         self.password = password
         self.role = role
