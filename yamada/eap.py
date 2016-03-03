@@ -126,6 +126,7 @@ class eap_md5_challenge(stringify.StringifyMixin):
         return cls(buf[:length])
 
     def serialize(self):
-        hdr = bytearray(struct.pack(eap_md5_challenge._PACK_STR, len(self.challenge)))
+        hdr = bytearray(struct.pack(eap_md5_challenge._PACK_STR,
+                                    len(self.challenge)))
         hdr += self.challenge
         return hdr
