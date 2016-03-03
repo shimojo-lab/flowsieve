@@ -1,5 +1,7 @@
 # yamada-ofcontroller
 
+[![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/yamada-ofcontroller/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/yamada-ofcontroller)
+
 "ロールベースセキュリティポリシーを持つネットワーク"のためのOpenFlowコントローラ
 
 ## 環境設定
