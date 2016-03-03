@@ -14,14 +14,15 @@ class UserStore(app_manager.RyuApp):
 
     def _read_definition_file(self):
         data = load(file(self.definition_file))
-        self._store_user_data(data["users"])
-        self._store_role_data(data["roles"])
+        if "users" in data:
+            self._store_user_data(data["users"])
+        if "roles" in data:
+            self._store_role_data(data["roles"])
 
     def _store_user_data(self, users):
         for user in users:
             if not self._validate_user_keys(user):
                 return
-
             name = user["name"]
             password = user["password"]
             role = user["role"]
@@ -32,10 +33,8 @@ class UserStore(app_manager.RyuApp):
         for role in roles:
             if not self._validate_role_keys(role):
                 return
-
-            allowed_hosts = []
             name = role["name"]
-
+            allowed_hosts = []
             for host in role["allowed_hosts"]:
                 allowed_hosts.append(host)
 
@@ -52,7 +51,6 @@ class UserStore(app_manager.RyuApp):
         for host in role["allowed_hosts"]:
             if "name" not in host:
                 return False
-
             if "mac" not in host and "ip" not in host:
                 return False
 
