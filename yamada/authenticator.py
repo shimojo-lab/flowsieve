@@ -10,13 +10,17 @@ from ryu.ofproto import ofproto_v1_0
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 
-from yamada import eap, eapol, eap_md5_sm
+from yamada import eap, eapol, eap_md5_sm, simple_switch
 
 
 class Authenticator(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
     _EVENTS = [eap_md5_sm.EventStartEAP, eap_md5_sm.EventStartEAPMD5Challenge,
                eap_md5_sm.EventFinishEAPMD5Challenge]
+    _CONTEXTS = {
+        "eap_md5_sm": eap_md5_sm.EAPMD5StateMachine,
+        "simple_switch": simple_switch.SimpleSwitch
+    }
 
     def __init__(self, *args, **kwargs):
         super(Authenticator, self).__init__(*args, **kwargs)

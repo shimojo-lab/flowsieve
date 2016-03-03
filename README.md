@@ -11,3 +11,7 @@
 3. `direnv allow`
 4. `pip install -r requirements.txt`
 
+## 実行
+
+1. `./run_controller`
+
