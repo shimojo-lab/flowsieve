@@ -2,6 +2,9 @@
 Yamada 802.1X Authenticator
 """
 
+import md5
+import struct
+
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER
@@ -55,9 +58,9 @@ class Authenticator(app_manager.RyuApp):
         src = eth.src
 
         self.logger.info("EAPOL packet in %s %s %s %s", dpid, src, dst, msg.in_port)
+        print pkt
 
         eapol_msg = pkt.get_protocol(eapol.eapol)
-        print eapol_msg
 
         if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
             resp = packet.Packet()
@@ -67,6 +70,7 @@ class Authenticator(app_manager.RyuApp):
             resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
             resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
                                       type_=eap.EAP_TYPE_IDENTIFY))
+            print resp
             resp.serialize()
 
             actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
@@ -77,6 +81,54 @@ class Authenticator(app_manager.RyuApp):
                 buffer_id=ofproto.OFP_NO_BUFFER,
                 data=resp.data)
             datapath.send_msg(out)
+
         elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:
             eap_msg = pkt.get_protocol(eap.eap)
-            print eap_msg
+            if eap_msg.code == eap.EAP_CODE_RESPONSE and eap_msg.type_ == eap.EAP_TYPE_IDENTIFY:
+                resp = packet.Packet()
+                resp.add_protocol(ethernet.ethernet(src=dst,
+                                                    dst=src,
+                                                    ethertype=eapol.ETH_TYPE_EAPOL))
+                resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
+                resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
+                                          type_=eap.EAP_TYPE_MD5_CHALLENGE,
+                                          data=eap.eap_md5_challenge(challenge="aaaaaaaaaaaaaaaa")))
+                print resp
+                resp.serialize()
+
+                actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
+                out = ofproto_parser.OFPPacketOut(
+                    datapath=datapath,
+                    in_port=ofproto.OFPP_NONE,
+                    actions=actions,
+                    buffer_id=ofproto.OFP_NO_BUFFER,
+                    data=resp.data)
+                datapath.send_msg(out)
+            if eap_msg.code == eap.EAP_CODE_RESPONSE and eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
+                m = md5.new()
+                m.update(struct.pack("!B", eap_msg.identifier))
+                m.update("TIS")
+                m.update("aaaaaaaaaaaaaaaa")
+                print repr(m.digest())
+
+                #  if m.digest() == eap_msg.data.challenge:
+                    #  result = eap.EAP_CODE_SUCCESS
+                #  else:
+                    #  result = eap.EAP_CODE_FAILURE
+
+                resp = packet.Packet()
+                resp.add_protocol(ethernet.ethernet(src=dst,
+                                                    dst=src,
+                                                    ethertype=eapol.ETH_TYPE_EAPOL))
+                resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
+                resp.add_protocol(eap.eap(identifier=eap_msg.identifier, code=eap.EAP_CODE_SUCCESS))
+                resp.serialize()
+
+                actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
+                out = ofproto_parser.OFPPacketOut(
+                    datapath=datapath,
+                    in_port=ofproto.OFPP_NONE,
+                    actions=actions,
+                    buffer_id=ofproto.OFP_NO_BUFFER,
+                    data=resp.data)
+                datapath.send_msg(out)
