@@ -1,0 +1,6 @@
+build:
+  image: python:2
+  commands:
+    - pip install -r requirements.txt
+    - flake8 --exclude=.direnv .
+    - nosetests -v
