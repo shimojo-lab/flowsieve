@@ -7,7 +7,7 @@ import struct
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
-from ryu.controller.handler import MAIN_DISPATCHER
+from ryu.controller.handler import MAIN_DISPATCHER, DEAD_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_0
 from ryu.lib.packet import packet
@@ -21,32 +21,45 @@ class Authenticator(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(Authenticator, self).__init__(*args, **kwargs)
+        self.dps = {}
 
-    @set_ev_cls(ofp_event.EventOFPStateChange, MAIN_DISPATCHER)
-    def _state_change_handler(self, ev):
-        datapath = ev.datapath
-        ofproto = datapath.ofproto
-        ofproto_parser = datapath.ofproto_parser
-
-        self.logger.info("Datapath %016x connected", datapath.id)
+    def _install_eapol_flow(self, dp):
+        ofproto = dp.ofproto
+        ofproto_parser = dp.ofproto_parser
 
         match = ofproto_parser.OFPMatch(dl_type=eapol.ETH_TYPE_EAPOL)
         actions = [ofproto_parser.OFPActionOutput(ofproto.OFPP_CONTROLLER)]
 
-        mod = datapath.ofproto_parser.OFPFlowMod(
-            datapath=datapath, match=match, cookie=0,
+        mod = dp.ofproto_parser.OFPFlowMod(
+            datapath=dp, match=match, cookie=0,
             command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
             priority=0xffff,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
-        datapath.send_msg(mod)
+        dp.send_msg(mod)
+
+    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER,
+                                                DEAD_DISPATCHER])
+    def _state_change_handler(self, ev):
+        dp = ev.datapath
+        if ev.state == MAIN_DISPATCHER:
+            if dp.id is None:
+                return
+            self.logger.info("Datapath %016x connected", dp.id)
+            self.dps[dp.id] = dp
+            self._install_eapol_flow(dp)
+        elif ev.state == DEAD_DISPATCHER:
+            if dp.id is None:
+                return
+            if dp.id in self.dps:
+                del self.dps[dp.id]
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
         msg = ev.msg
-        datapath = msg.datapath
-        ofproto = datapath.ofproto
-        ofproto_parser = datapath.ofproto_parser
-        dpid = datapath.id
+        dp = msg.datapath
+        ofproto = dp.ofproto
+        ofproto_parser = dp.ofproto_parser
+        dpid = dp.id
 
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
@@ -75,12 +88,12 @@ class Authenticator(app_manager.RyuApp):
 
             actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
             out = ofproto_parser.OFPPacketOut(
-                datapath=datapath,
+                datapath=dp,
                 in_port=ofproto.OFPP_NONE,
                 actions=actions,
                 buffer_id=ofproto.OFP_NO_BUFFER,
                 data=resp.data)
-            datapath.send_msg(out)
+            dp.send_msg(out)
 
         elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:
             eap_msg = pkt.get_protocol(eap.eap)
@@ -98,12 +111,12 @@ class Authenticator(app_manager.RyuApp):
 
                 actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
                 out = ofproto_parser.OFPPacketOut(
-                    datapath=datapath,
+                    datapath=dp,
                     in_port=ofproto.OFPP_NONE,
                     actions=actions,
                     buffer_id=ofproto.OFP_NO_BUFFER,
                     data=resp.data)
-                datapath.send_msg(out)
+                dp.send_msg(out)
             if eap_msg.code == eap.EAP_CODE_RESPONSE and eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
                 m = md5.new()
                 m.update(struct.pack("!B", eap_msg.identifier))
@@ -126,9 +139,9 @@ class Authenticator(app_manager.RyuApp):
 
                 actions = [ofproto_parser.OFPActionOutput(msg.in_port)]
                 out = ofproto_parser.OFPPacketOut(
-                    datapath=datapath,
+                    datapath=dp,
                     in_port=ofproto.OFPP_NONE,
                     actions=actions,
                     buffer_id=ofproto.OFP_NO_BUFFER,
                     data=resp.data)
-                datapath.send_msg(out)
+                dp.send_msg(out)
