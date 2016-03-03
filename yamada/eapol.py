@@ -32,6 +32,11 @@ class eapol(packet_base.PacketBase):
     def __len__(self):
         return self._MIN_LEN
 
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.__dict__ == other.__dict__
+
     @classmethod
     def parser(cls, buf):
         (version, type_, length) = struct.unpack_from(eapol._PACK_STR, buf)

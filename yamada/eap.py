@@ -47,6 +47,11 @@ class eap(packet_base.PacketBase):
     def __len__(self):
         return self.length
 
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.__dict__ == other.__dict__
+
     @classmethod
     def parser(cls, buf):
         (code, identifier, length) = struct.unpack_from(cls._PACK_STR, buf)
@@ -98,6 +103,11 @@ class eap_identify(stringify.StringifyMixin):
     def __len__(self):
         return len(self.identity)
 
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.__dict__ == other.__dict__
+
     @classmethod
     def parser(cls, buf):
         return cls(buf.decode("utf-8"))
@@ -121,6 +131,11 @@ class eap_md5_challenge(stringify.StringifyMixin):
 
     def __len__(self):
         return eap_md5_challenge._MIN_LEN + len(self.challenge)
+
+    def __eq__(self, other):
+        if other is None or type(self) != type(other):
+            return False
+        return self.__dict__ == other.__dict__
 
     @classmethod
     def parser(cls, buf):
