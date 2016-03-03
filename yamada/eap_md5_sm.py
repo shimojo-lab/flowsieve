@@ -14,6 +14,8 @@ from yamada import eap, eapol
 
 
 class EventStartEAP(EventBase):
+    """EAPoL start received
+    """
     def __init__(self, dpid, src, dst, port):
         super(EventStartEAP, self).__init__()
         self.dpid = dpid
@@ -23,6 +25,8 @@ class EventStartEAP(EventBase):
 
 
 class EventStartEAPMD5Challenge(EventBase):
+    """EAP identify response received
+    """
     def __init__(self, dpid, port, identity):
         super(EventStartEAPMD5Challenge, self).__init__()
         self.dpid = dpid
@@ -31,6 +35,8 @@ class EventStartEAPMD5Challenge(EventBase):
 
 
 class EventFinishEAPMD5Challenge(EventBase):
+    """EAP MD5 challenge response received
+    """
     def __init__(self, dpid, port, challenge, identifier):
         super(EventFinishEAPMD5Challenge, self).__init__()
         self.dpid = dpid
@@ -40,6 +46,8 @@ class EventFinishEAPMD5Challenge(EventBase):
 
 
 class EventOutputEAPOL(EventBase):
+    """Request to send an EAPoL frame
+    """
     def __init__(self, dpid, port, pkt):
         super(EventOutputEAPOL, self).__init__()
         self.dpid = dpid
@@ -53,14 +61,23 @@ EAPMD5_STAETE_CHALLENGE = 2
 
 
 class EAPMD5Context(object):
+    """Represents an EAP MD5 authentication context
+    """
     def __init__(self, dpid, port, src, dst):
         super(EAPMD5Context, self).__init__()
+        # The datapath we're working on
         self.dpid = dpid
+        # The port number we're working on
         self.port = port
+        # Supplicant MAC address
         self.src = src
+        # Authenticator MAC address (likely to be a multicast address)
         self.dst = dst
+        # MD5 challenge value
         self.challenge = ""
+        # Identity
         self.identity = ""
+        # Current state
         self.state = EAPMD5_STAETE_IDLE
 
 
@@ -152,6 +169,8 @@ class EAPMD5StateMachine(app_manager.RyuApp):
 
     def _check_challenge_response(self, response, identifier, challenge,
                                   password):
+        """Check if MD5 challenge response is correct
+        """
         m = md5.new()
         m.update(struct.pack("!B", identifier))
         m.update(password)

@@ -14,6 +14,8 @@ from yamada import eap, eapol, eap_md5_sm, simple_switch
 
 
 class Authenticator(app_manager.RyuApp):
+    """802.1X Authenticator Application
+    """
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
     _EVENTS = [eap_md5_sm.EventStartEAP, eap_md5_sm.EventStartEAPMD5Challenge,
                eap_md5_sm.EventFinishEAPMD5Challenge]
@@ -27,6 +29,8 @@ class Authenticator(app_manager.RyuApp):
         self._dps = {}
 
     def _install_eapol_flow(self, dp):
+        """Install flow rules to forward EAPoL packets to the controller
+        """
         ofproto = dp.ofproto
         ofproto_parser = dp.ofproto_parser
 
@@ -77,17 +81,22 @@ class Authenticator(app_manager.RyuApp):
 
         sm_ev = None
 
+        # We received a EAPoL start frame
         if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
             sm_ev = eap_md5_sm.EventStartEAP(dpid, src, dst, msg.in_port)
 
+        # We received a EAPoL EAP frame
         elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:
             eap_msg = pkt.get_protocol(eap.eap)
+            # This is a EAP Response packet
             if eap_msg.code == eap.EAP_CODE_RESPONSE:
 
+                # This is a EAP Identify Response
                 if eap_msg.type_ == eap.EAP_TYPE_IDENTIFY:
                     sm_ev = eap_md5_sm.EventStartEAPMD5Challenge(
                             dpid, msg.in_port, eap_msg.data.identity)
 
+                # This is a EAP MD5 Challenge Response
                 elif eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
                     sm_ev = eap_md5_sm.EventFinishEAPMD5Challenge(
                             dpid, msg.in_port, eap_msg.data.challenge,
@@ -98,6 +107,8 @@ class Authenticator(app_manager.RyuApp):
 
     @set_ev_cls(eap_md5_sm.EventOutputEAPOL)
     def _event_output_eapol_handler(self, ev):
+        """Output EAPoL frame from a specified datapath & port
+        """
         ev.pkt.serialize()
 
         dp = self._dps.get(ev.dpid)

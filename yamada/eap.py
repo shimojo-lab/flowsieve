@@ -15,6 +15,8 @@ EAP_TYPE_MD5_CHALLENGE = 0x04
 
 
 class eap(packet_base.PacketBase):
+    """Encoder/Decoder for EAP (Extensible Authentication Protocol) packets
+    """
     _PACK_STR = "!BBH"
     _TYPE_PACK_STR = "!B"
     _MIN_LEN = struct.calcsize(_PACK_STR)
