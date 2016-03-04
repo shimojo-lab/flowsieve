@@ -1,6 +1,6 @@
-from ryu.base import app_manager
-
 from yaml import load
+
+from ryu.base import app_manager
 
 
 class UserStore(app_manager.RyuApp):
@@ -17,7 +17,7 @@ class UserStore(app_manager.RyuApp):
         try:
             data = load(file(self.user_role_file))
         except IOError:
-            print "Could not open %s." % (self.conf.definition_file)
+            self.logger.error("Could not open %s", self.user_role_file)
             return
 
         if "users" in data:
@@ -64,7 +64,6 @@ class UserStore(app_manager.RyuApp):
 
 
 class Role(object):
-
     def __init__(self, name, allowed_hosts):
         super(Role, self).__init__()
         self.name = name
@@ -72,7 +71,6 @@ class Role(object):
 
 
 class User(object):
-
     def __init__(self, name, password, role):
         super(User, self).__init__()
         self.name = name
