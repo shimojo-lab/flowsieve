@@ -1,0 +1,44 @@
+#!/usr/bin/python
+
+from mininet.topo import Topo
+from mininet.net import Mininet
+from mininet.node import RemoteController
+from mininet.util import dumpNodeConnections
+from mininet.log import setLogLevel
+from mininet.cli import CLI
+
+
+class YamadaTopo(Topo):
+    """Single switch connected to multiple clients and servers.
+    """
+    def build(self, nc=2, ns=2, **_opts):
+        self.nc = nc
+        self.ns = ns
+
+        switch = self.addSwitch("switch1")
+
+        for i in range(nc):
+            host = self.addHost("user%s" % (i + 1))
+            self.addLink(host, switch)
+        for i in range(ns):
+            host = self.addHost("server%s" % (i + 1))
+            self.addLink(host, switch)
+
+
+def launchNetwork():
+    "Create and test a simple network"
+    topo = YamadaTopo(nc=2, ns=2)
+    net = Mininet(topo=topo, controller=RemoteController)
+
+    net.start()
+    print "Dumping host connections"
+    dumpNodeConnections(net.hosts)
+    print "Testing network connectivity"
+    net.pingAll()
+    CLI(net)
+    net.stop()
+
+
+if __name__ == "__main__":
+    setLogLevel("info")
+    launchNetwork()
