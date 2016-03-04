@@ -1,0 +1,14 @@
+#!/bin/sh
+
+RYU_OPTS=""
+
+while getopts d OPT
+do
+  case $OPT in
+    "d" ) RYU_OPTS="${RYU_OPTS} --verbose" ;;
+  esac
+done
+
+cd `dirname $0`/..
+ryu-manager yamada.authenticator $RYU_OPTS
+
