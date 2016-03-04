@@ -17,7 +17,8 @@ class Authenticator(app_manager.RyuApp):
     """802.1X Authenticator Application
     """
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
-    _EVENTS = [eap_md5_sm.EventStartEAP, eap_md5_sm.EventStartEAPMD5Challenge,
+    _EVENTS = [eap_md5_sm.EventStartEAPOL, eap_md5_sm.EventLogoffEAPOL,
+               eap_md5_sm.EventStartEAPMD5Challenge,
                eap_md5_sm.EventFinishEAPMD5Challenge]
     _CONTEXTS = {
         "eap_md5_sm": eap_md5_sm.EAPMD5StateMachine,
@@ -81,7 +82,7 @@ class Authenticator(app_manager.RyuApp):
 
         # We received a EAPoL start frame
         if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
-            sm_ev = eap_md5_sm.EventStartEAP(dpid, src, dst, msg.in_port)
+            sm_ev = eap_md5_sm.EventStartEAPOL(dpid, src, dst, msg.in_port)
 
         # We received a EAPoL EAP frame
         elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:

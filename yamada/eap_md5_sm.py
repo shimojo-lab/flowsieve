@@ -13,11 +13,11 @@ from ryu.lib.packet import packet, ethernet
 from yamada import eap, eapol
 
 
-class EventStartEAP(EventBase):
+class EventStartEAPOL(EventBase):
     """EAPoL start received
     """
     def __init__(self, dpid, src, dst, port):
-        super(EventStartEAP, self).__init__()
+        super(EventStartEAPOL, self).__init__()
         self.dpid = dpid
         self.src = src
         self.dst = dst
@@ -88,7 +88,7 @@ class EAPMD5StateMachine(app_manager.RyuApp):
         super(EAPMD5StateMachine, self).__init__(*args, **kwargs)
         self._contexts = {}
 
-    @set_ev_cls(EventStartEAP)
+    @set_ev_cls(EventStartEAPOL)
     def _event_start_eap_handler(self, ev):
         """Received an EAPoL Start packet
         Reply with a EAP Request Identify packet
