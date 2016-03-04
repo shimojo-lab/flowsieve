@@ -17,10 +17,12 @@ class EAPMD5Context(object):
     """Represents an EAP MD5 authentication context
     """
 
-    _STATES = ["idle", "ident", "challenge"]
+    _STATES = ["idle", "ident", "challenge", "authenticated"]
 
-    def __init__(self, dpid, port, src, dst):
+    def __init__(self, parent, dpid, port, src, dst):
         super(EAPMD5Context, self).__init__()
+        # EAPMD5Method application object
+        self._parent = parent
         # The datapath we're working on
         self.dpid = dpid
         # The port number we're working on
@@ -34,22 +36,24 @@ class EAPMD5Context(object):
         # Identity
         self.identity = ""
         # State machine
-        self.state_machine = Machine(model=self, states=EAPMD5Context._STATES,
-                                     initial="idle")
-        self.state_machine.add_transition("start_ident", "idle", "ident")
-        self.state_machine.add_transition("start_challenge", "ident",
-                                          "challenge",
-                                          before="set_identity_and_challenge")
-        self.state_machine.add_transition("logoff", "*", "idle")
-        self.state_machine.add_transition("logon", "challenge", "idle",
-                                          before="set_identifier")
+        self._state_machine = Machine(model=self, states=EAPMD5Context._STATES,
+                                      initial="idle")
+        self._state_machine.add_transition("start_ident", "idle", "ident")
+        self._state_machine.add_transition("start_challenge", "ident",
+                                           "challenge")
+        self._state_machine.add_transition("logon", "challenge",
+                                           "authenticated")
+        self._state_machine.add_transition("logoff", "*", "idle")
 
-    def set_identity_and_challenge(self, identity, challenge):
+    def on_enter_challenge(self, identity, challenge):
         self.identity = identity
         self.challenge = challenge
 
-    def set_identifier(self, identifier):
+    def on_enter_authenticated(self, identifier):
         self.identifier = identifier
+        self._parent.logger.info("Authenticated user %s (%s) at port %d of"
+                                 " switch %016x", self.identity, self.src,
+                                 self.port, self.dpid)
 
 
 class EAPMD5Method(app_manager.RyuApp):
@@ -68,7 +72,7 @@ class EAPMD5Method(app_manager.RyuApp):
         """
         if (ev.dpid, ev.port) not in self._contexts:
             self._contexts[(ev.dpid, ev.port)] = EAPMD5Context(
-                ev.dpid, ev.port, ev.src, ev.dst)
+                self, ev.dpid, ev.port, ev.src, ev.dst)
         ctx = self._contexts.get((ev.dpid, ev.port))
 
         if not ctx.is_idle():
@@ -151,9 +155,6 @@ class EAPMD5Method(app_manager.RyuApp):
         self.send_event_to_observers(
             eap_events.EventOutputEAPOL(ev.dpid, ev.port, resp)
         )
-
-        self.logger.info("Authenticated user %s (%s) at port %d of switch"
-                         " %016x", ctx.identity, ctx.src, ctx.port, ctx.dpid)
 
     def _check_challenge_response(self, response, identifier, challenge,
                                   password):
