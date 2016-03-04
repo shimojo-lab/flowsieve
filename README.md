@@ -13,5 +13,5 @@
 
 ## 実行
 
-1. `./run_controller`
+1. `./tool/run_controller`
 
