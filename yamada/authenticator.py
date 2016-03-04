@@ -111,8 +111,8 @@ class Authenticator(app_manager.RyuApp):
         """
         ev.pkt.serialize()
 
-        """The minimum size of an ethernet frame is 64 bytes,
-        """including 4-byte CRC, which is added by the hardware.
+        # The minimum size of an ethernet frame is 64 bytes,
+        # including 4-byte CRC, which is added by the hardware.
         data_len = len(ev.pkt.data)
         pad_len = max(60 - data_len, 0)
         ev.pkt.data += "\x00" * pad_len
