@@ -116,7 +116,7 @@ class Authenticator(app_manager.RyuApp):
         """
         data_len = len(ev.pkt.data)
         pad_len = max(60 - data_len, 0)
-        ev.pkt.data += '\x00' * pad_len
+        ev.pkt.data += "x00" * pad_len
 
         dp = self._dps.get(ev.dpid)
         if dp is None:
