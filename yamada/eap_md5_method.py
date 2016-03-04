@@ -90,9 +90,18 @@ class EAPMD5Context(object):
                                      initial="idle")
         self.state_machine.add_transition("start_ident", "idle", "ident")
         self.state_machine.add_transition("start_challenge", "ident",
-                                          "challenge")
+                                          "challenge",
+                                          before="set_identity_and_challenge")
         self.state_machine.add_transition("logoff", "*", "idle")
-        self.state_machine.add_transition("logon", "challenge", "idle")
+        self.state_machine.add_transition("logon", "challenge", "idle",
+                                          before="set_identifier")
+
+    def set_identity_and_challenge(self, identity, challenge):
+        self.identity = identity
+        self.challenge = challenge
+
+    def set_identifier(self, identifier):
+        self.identifier = identifier
 
 
 class EAPMD5Method(app_manager.RyuApp):
@@ -132,9 +141,9 @@ class EAPMD5Method(app_manager.RyuApp):
         """Received an EAPoL Logoff packet
         Reply with an EAP Request Identify packet
         """
-        if (ev.dpid, ev.port) not in self._contexts:
-            return
         ctx = self._contexts.get((ev.dpid, ev.port))
+        if ctx is None:
+            return
 
         ctx.logoff()
 
@@ -149,10 +158,7 @@ class EAPMD5Method(app_manager.RyuApp):
             return
 
         c = eap.eap_md5_challenge()
-
-        ctx.identity = ev.identity
-        ctx.challenge = c.challenge
-        ctx.start_challenge()
+        ctx.start_challenge(ev.identity, c.challenge)
 
         resp = packet.Packet()
         resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
@@ -169,13 +175,12 @@ class EAPMD5Method(app_manager.RyuApp):
         """Received an EAPoL Response MD5 Challenge packet
         Reply with an EAP Success/Failure packet
         """
-        ctx = self._contexts.get((ev.dpid, ev.port), None)
+        ctx = self._contexts.get((ev.dpid, ev.port))
         if ctx is None or not ctx.is_challenge():
             # Unknown peer or inconsistent state
             return
 
-        ctx.identifier = ev.identifier
-        ctx.logon()
+        ctx.logon(ev.identifier)
 
         valid = self._check_challenge_response(ev.challenge, ctx.identifier,
                                                ctx.challenge, "TIS")
