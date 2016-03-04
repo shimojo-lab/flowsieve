@@ -4,7 +4,7 @@ Yamada 802.1X Authenticator
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event, dpset
-from ryu.controller.handler import MAIN_DISPATCHER, DEAD_DISPATCHER
+from ryu.controller.handler import MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_0
 from ryu.lib.packet import packet
@@ -46,18 +46,14 @@ class Authenticator(app_manager.RyuApp):
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
         dp.send_msg(mod)
 
-    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER,
-                                                DEAD_DISPATCHER])
+    @set_ev_cls(ofp_event.EventOFPStateChange, MAIN_DISPATCHER)
     def _state_change_handler(self, ev):
         dp = ev.datapath
-        if ev.state == MAIN_DISPATCHER:
-            if dp.id is None:
-                return
-            self.logger.info("Datapath %016x connected", dp.id)
-            self._install_eapol_flow(dp)
-        elif ev.state == DEAD_DISPATCHER:
-            if dp.id is None:
-                return
+        if dp.id is None:
+            return
+
+        self.logger.info("Datapath %016x connected", dp.id)
+        self._install_eapol_flow(dp)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
@@ -74,20 +70,19 @@ class Authenticator(app_manager.RyuApp):
         dst = eth.dst
         src = eth.src
 
-        print pkt
-
         eapol_msg = pkt.get_protocol(eapol.eapol)
 
         sm_ev = None
 
-        # We received a EAPoL start frame
+        # We received an EAPoL start frame
         if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
             sm_ev = eap_md5_sm.EventStartEAPOL(dpid, src, dst, msg.in_port)
 
         # We received a EAPoL EAP frame
         elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:
             eap_msg = pkt.get_protocol(eap.eap)
-            # This is a EAP Response packet
+
+            # This is an EAP Response packet
             if eap_msg.code == eap.EAP_CODE_RESPONSE:
 
                 # This is a EAP Identify Response
@@ -95,7 +90,7 @@ class Authenticator(app_manager.RyuApp):
                     sm_ev = eap_md5_sm.EventStartEAPMD5Challenge(
                             dpid, msg.in_port, eap_msg.data.identity)
 
-                # This is a EAP MD5 Challenge Response
+                # This is an EAP MD5 Challenge Response
                 elif eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
                     sm_ev = eap_md5_sm.EventFinishEAPMD5Challenge(
                             dpid, msg.in_port, eap_msg.data.challenge,

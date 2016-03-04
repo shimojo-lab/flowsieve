@@ -91,7 +91,7 @@ class EAPMD5StateMachine(app_manager.RyuApp):
     @set_ev_cls(EventStartEAPOL)
     def _event_start_eap_handler(self, ev):
         """Received an EAPoL Start packet
-        Reply with a EAP Request Identify packet
+        Reply with an EAP Request Identify packet
         """
         if (ev.dpid, ev.port) not in self._contexts:
             self._contexts[(ev.dpid, ev.port)] = EAPMD5Context(
@@ -115,7 +115,7 @@ class EAPMD5StateMachine(app_manager.RyuApp):
     @set_ev_cls(EventStartEAPMD5Challenge)
     def _event_start_md5_challenge(self, ev):
         """Received an EAPoL Response Identify packet
-        Reply with a EAP Request MD5 Challenge packet
+        Reply with an EAP Request MD5 Challenge packet
         """
         ctx = self._contexts.get((ev.dpid, ev.port))
         if ctx is None or ctx.state != EAPMD5_STAETE_IDENT:
@@ -141,7 +141,7 @@ class EAPMD5StateMachine(app_manager.RyuApp):
     @set_ev_cls(EventFinishEAPMD5Challenge)
     def _event_finish_eap_md5_challenge(self, ev):
         """Received an EAPoL Response MD5 Challenge packet
-        Reply with a EAP Success/Failure packet
+        Reply with an EAP Success/Failure packet
         """
         ctx = self._contexts.get((ev.dpid, ev.port), None)
         if ctx is None or ctx.state != EAPMD5_STAETE_CHALLENGE:
@@ -166,6 +166,9 @@ class EAPMD5StateMachine(app_manager.RyuApp):
                                   code=code))
 
         self.send_event_to_observers(EventOutputEAPOL(ev.dpid, ev.port, resp))
+
+        self.logger.info("Authenticated user %s (%s) at port %d of switch"
+                         " %016x", ctx.identity, ctx.src, ctx.port, ctx.dpid)
 
     def _check_challenge_response(self, response, identifier, challenge,
                                   password):
