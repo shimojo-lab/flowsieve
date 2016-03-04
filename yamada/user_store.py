@@ -4,16 +4,22 @@ from yaml import load
 
 
 class UserStore(app_manager.RyuApp):
+    USER_ROLE_FILE = "conf/user-role.yml"
 
     def __init__(self, *args, **kwargs):
         super(UserStore, self).__init__(*args, **kwargs)
-        self.definition_file = "define.yml"
+        self.user_role_file = self.USER_ROLE_FILE
         self.users = {}
         self.roles = {}
         self._read_definition_file()
 
     def _read_definition_file(self):
-        data = load(file(self.definition_file))
+        try:
+            data = load(file(self.user_role_file))
+        except IOError:
+            print "Could not open %s." % (self.conf.definition_file)
+            return
+
         if "users" in data:
             self._store_user_data(data["users"])
         if "roles" in data:
