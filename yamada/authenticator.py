@@ -27,6 +27,7 @@ class Authenticator(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(Authenticator, self).__init__(*args, **kwargs)
+        self.dps = kwargs["dpset"]
 
     def _install_eapol_flow(self, dp):
         """Install flow rules to forward EAPoL packets to the controller
@@ -114,7 +115,7 @@ class Authenticator(app_manager.RyuApp):
         pad_len = max(60 - data_len, 0)
         ev.pkt.data += "\x00" * pad_len
 
-        dp = dpset.get(ev.dpid)
+        dp = self.dps.get(ev.dpid)
         if dp is None:
             return
         ofproto_parser = dp.ofproto_parser
