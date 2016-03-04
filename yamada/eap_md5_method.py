@@ -90,11 +90,13 @@ class EAPMD5Context(object):
         self.state = EAPMD5_STAETE_IDLE
 
 
-class EAPMD5StateMachine(app_manager.RyuApp):
+class EAPMD5Method(app_manager.RyuApp):
+    """EAP-MD5 authentication method implementation
+    """
     _EVENTS = [EventOutputEAPOL]
 
     def __init__(self, *args, **kwargs):
-        super(EAPMD5StateMachine, self).__init__(*args, **kwargs)
+        super(EAPMD5Method, self).__init__(*args, **kwargs)
         self._contexts = {}
 
     @set_ev_cls(EventStartEAPOL)

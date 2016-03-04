@@ -10,18 +10,18 @@ from ryu.ofproto import ofproto_v1_0
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 
-from yamada import eap, eapol, eap_md5_sm, simple_switch
+from yamada import eap, eapol, eap_md5_method, simple_switch
 
 
 class Authenticator(app_manager.RyuApp):
     """802.1X Authenticator Application
     """
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
-    _EVENTS = [eap_md5_sm.EventStartEAPOL, eap_md5_sm.EventLogoffEAPOL,
-               eap_md5_sm.EventStartEAPMD5Challenge,
-               eap_md5_sm.EventFinishEAPMD5Challenge]
+    _EVENTS = [eap_md5_method.EventStartEAPOL, eap_md5_method.EventLogoffEAPOL,
+               eap_md5_method.EventStartEAPMD5Challenge,
+               eap_md5_method.EventFinishEAPMD5Challenge]
     _CONTEXTS = {
-        "eap_md5_sm": eap_md5_sm.EAPMD5StateMachine,
+        "eap_md5_method": eap_md5_method.EAPMD5Method,
         "simple_switch": simple_switch.SimpleSwitch,
         "dpset": dpset.DPSet
     }
@@ -76,11 +76,11 @@ class Authenticator(app_manager.RyuApp):
 
         # We received an EAPoL start frame
         if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
-            sm_ev = eap_md5_sm.EventStartEAPOL(dpid, src, dst, msg.in_port)
+            sm_ev = eap_md5_method.EventStartEAPOL(dpid, src, dst, msg.in_port)
 
         # We received an EAPoL logoff frame
         if eapol_msg.type_ == eapol.EAPOL_TYPE_LOGOFF:
-            sm_ev = eap_md5_sm.EventLogoffEAPOL(dpid, msg.in_port)
+            sm_ev = eap_md5_method.EventLogoffEAPOL(dpid, msg.in_port)
 
         # We received an EAPoL EAP frame
         elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:
@@ -91,19 +91,19 @@ class Authenticator(app_manager.RyuApp):
 
                 # This is a EAP Identify Response
                 if eap_msg.type_ == eap.EAP_TYPE_IDENTIFY:
-                    sm_ev = eap_md5_sm.EventStartEAPMD5Challenge(
+                    sm_ev = eap_md5_method.EventStartEAPMD5Challenge(
                             dpid, msg.in_port, eap_msg.data.identity)
 
                 # This is an EAP MD5 Challenge Response
                 elif eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
-                    sm_ev = eap_md5_sm.EventFinishEAPMD5Challenge(
+                    sm_ev = eap_md5_method.EventFinishEAPMD5Challenge(
                             dpid, msg.in_port, eap_msg.data.challenge,
                             eap_msg.identifier)
 
         if sm_ev is not None:
             self.send_event_to_observers(sm_ev)
 
-    @set_ev_cls(eap_md5_sm.EventOutputEAPOL)
+    @set_ev_cls(eap_md5_method.EventOutputEAPOL)
     def _event_output_eapol_handler(self, ev):
         """Output EAPoL frame from a specified datapath & port
         """
