@@ -49,8 +49,7 @@ class EAPMD5Context(object):
         self.identity = identity
         self.challenge = challenge
 
-    def on_enter_authenticated(self, identifier):
-        self.identifier = identifier
+    def on_enter_authenticated(self):
         self._parent.logger.info("Authenticated user %s (%s) at port %d of"
                                  " switch %016x", self.identity, self.src,
                                  self.port, self.dpid)
@@ -136,20 +135,20 @@ class EAPMD5Method(app_manager.RyuApp):
             # Unknown peer or inconsistent state
             return
 
-        ctx.logon(ev.identifier)
-
-        valid = self._check_challenge_response(ev.challenge, ctx.identifier,
+        valid = self._check_challenge_response(ev.challenge, ev.identifier,
                                                ctx.challenge, "TIS")
         if valid:
             code = eap.EAP_CODE_SUCCESS
+            ctx.logon()
         else:
             code = eap.EAP_CODE_FAILURE
+            ctx.logoff()
 
         resp = packet.Packet()
         resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
                                             ethertype=eapol.ETH_TYPE_EAPOL))
         resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
-        resp.add_protocol(eap.eap(identifier=ctx.identifier,
+        resp.add_protocol(eap.eap(identifier=ev.identifier,
                                   code=code))
 
         self.send_event_to_observers(
