@@ -9,6 +9,7 @@ from ryu.base import app_manager
 from ryu.controller.handler import set_ev_cls
 from ryu.controller.event import EventBase
 from ryu.lib.packet import packet, ethernet
+from transitions import Machine
 
 from yamada import eap, eapol
 
@@ -64,14 +65,12 @@ class EventOutputEAPOL(EventBase):
         self.pkt = pkt
 
 
-EAPMD5_STAETE_IDLE = 0
-EAPMD5_STAETE_IDENT = 1
-EAPMD5_STAETE_CHALLENGE = 2
-
-
 class EAPMD5Context(object):
     """Represents an EAP MD5 authentication context
     """
+
+    _STATES = ["idle", "ident", "challenge"]
+
     def __init__(self, dpid, port, src, dst):
         super(EAPMD5Context, self).__init__()
         # The datapath we're working on
@@ -86,8 +85,14 @@ class EAPMD5Context(object):
         self.challenge = ""
         # Identity
         self.identity = ""
-        # Current state
-        self.state = EAPMD5_STAETE_IDLE
+        # State machine
+        self.state_machine = Machine(model=self, states=EAPMD5Context._STATES,
+                                     initial="idle")
+        self.state_machine.add_transition("start_ident", "idle", "ident")
+        self.state_machine.add_transition("start_challenge", "ident",
+                                          "challenge")
+        self.state_machine.add_transition("logoff", "*", "idle")
+        self.state_machine.add_transition("logon", "challenge", "idle")
 
 
 class EAPMD5Method(app_manager.RyuApp):
@@ -109,10 +114,9 @@ class EAPMD5Method(app_manager.RyuApp):
                 ev.dpid, ev.port, ev.src, ev.dst)
         ctx = self._contexts.get((ev.dpid, ev.port))
 
-        if ctx.state != EAPMD5_STAETE_IDLE:
+        if not ctx.is_idle():
             return
-
-        ctx.state = EAPMD5_STAETE_IDENT
+        ctx.start_ident()
 
         resp = packet.Packet()
         resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
@@ -132,7 +136,7 @@ class EAPMD5Method(app_manager.RyuApp):
             return
         ctx = self._contexts.get((ev.dpid, ev.port))
 
-        ctx.state = EAPMD5_STAETE_IDLE
+        ctx.logoff()
 
     @set_ev_cls(EventStartEAPMD5Challenge)
     def _event_start_md5_challenge(self, ev):
@@ -140,7 +144,7 @@ class EAPMD5Method(app_manager.RyuApp):
         Reply with an EAP Request MD5 Challenge packet
         """
         ctx = self._contexts.get((ev.dpid, ev.port))
-        if ctx is None or ctx.state != EAPMD5_STAETE_IDENT:
+        if ctx is None or not ctx.is_ident():
             # Unknown peer or inconsistent state
             return
 
@@ -148,7 +152,7 @@ class EAPMD5Method(app_manager.RyuApp):
 
         ctx.identity = ev.identity
         ctx.challenge = c.challenge
-        ctx.state = EAPMD5_STAETE_CHALLENGE
+        ctx.start_challenge()
 
         resp = packet.Packet()
         resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
@@ -166,12 +170,12 @@ class EAPMD5Method(app_manager.RyuApp):
         Reply with an EAP Success/Failure packet
         """
         ctx = self._contexts.get((ev.dpid, ev.port), None)
-        if ctx is None or ctx.state != EAPMD5_STAETE_CHALLENGE:
+        if ctx is None or not ctx.is_challenge():
             # Unknown peer or inconsistent state
             return
 
         ctx.identifier = ev.identifier
-        ctx.state = EAPMD5_STAETE_IDLE
+        ctx.logon()
 
         valid = self._check_challenge_response(ev.challenge, ctx.identifier,
                                                ctx.challenge, "TIS")
