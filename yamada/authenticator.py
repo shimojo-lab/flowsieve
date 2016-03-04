@@ -3,7 +3,7 @@ Yamada 802.1X Authenticator
 """
 
 from ryu.base import app_manager
-from ryu.controller import ofp_event
+from ryu.controller import ofp_event, dpset
 from ryu.controller.handler import MAIN_DISPATCHER, DEAD_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_0
@@ -21,12 +21,12 @@ class Authenticator(app_manager.RyuApp):
                eap_md5_sm.EventFinishEAPMD5Challenge]
     _CONTEXTS = {
         "eap_md5_sm": eap_md5_sm.EAPMD5StateMachine,
-        "simple_switch": simple_switch.SimpleSwitch
+        "simple_switch": simple_switch.SimpleSwitch,
+        "dpset": dpset.DPSet
     }
 
     def __init__(self, *args, **kwargs):
         super(Authenticator, self).__init__(*args, **kwargs)
-        self._dps = {}
 
     def _install_eapol_flow(self, dp):
         """Install flow rules to forward EAPoL packets to the controller
@@ -52,13 +52,10 @@ class Authenticator(app_manager.RyuApp):
             if dp.id is None:
                 return
             self.logger.info("Datapath %016x connected", dp.id)
-            self._dps[dp.id] = dp
             self._install_eapol_flow(dp)
         elif ev.state == DEAD_DISPATCHER:
             if dp.id is None:
                 return
-            if dp.id in self._dps:
-                del self._dps[dp.id]
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
@@ -117,7 +114,7 @@ class Authenticator(app_manager.RyuApp):
         pad_len = max(60 - data_len, 0)
         ev.pkt.data += "\x00" * pad_len
 
-        dp = self._dps.get(ev.dpid)
+        dp = dpset.get(ev.dpid)
         if dp is None:
             return
         ofproto_parser = dp.ofproto_parser
