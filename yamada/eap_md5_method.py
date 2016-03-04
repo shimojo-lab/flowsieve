@@ -7,62 +7,10 @@ import md5
 
 from ryu.base import app_manager
 from ryu.controller.handler import set_ev_cls
-from ryu.controller.event import EventBase
 from ryu.lib.packet import packet, ethernet
 from transitions import Machine
 
-from yamada import eap, eapol
-
-
-class EventStartEAPOL(EventBase):
-    """EAPoL start received
-    """
-    def __init__(self, dpid, src, dst, port):
-        super(EventStartEAPOL, self).__init__()
-        self.dpid = dpid
-        self.src = src
-        self.dst = dst
-        self.port = port
-
-
-class EventLogoffEAPOL(EventBase):
-    """EAPoL logoff received
-    """
-    def __init__(self, dpid, port):
-        super(EventLogoffEAPOL, self).__init__()
-        self.dpid = dpid
-        self.port = port
-
-
-class EventStartEAPMD5Challenge(EventBase):
-    """EAP identify response received
-    """
-    def __init__(self, dpid, port, identity):
-        super(EventStartEAPMD5Challenge, self).__init__()
-        self.dpid = dpid
-        self.port = port
-        self.identity = identity
-
-
-class EventFinishEAPMD5Challenge(EventBase):
-    """EAP MD5 challenge response received
-    """
-    def __init__(self, dpid, port, challenge, identifier):
-        super(EventFinishEAPMD5Challenge, self).__init__()
-        self.dpid = dpid
-        self.port = port
-        self.challenge = challenge
-        self.identifier = identifier
-
-
-class EventOutputEAPOL(EventBase):
-    """Request to send an EAPoL frame
-    """
-    def __init__(self, dpid, port, pkt):
-        super(EventOutputEAPOL, self).__init__()
-        self.dpid = dpid
-        self.port = port
-        self.pkt = pkt
+from yamada import eap, eapol, eap_events
 
 
 class EAPMD5Context(object):
@@ -107,13 +55,13 @@ class EAPMD5Context(object):
 class EAPMD5Method(app_manager.RyuApp):
     """EAP-MD5 authentication method implementation
     """
-    _EVENTS = [EventOutputEAPOL]
+    _EVENTS = [eap_events.EventOutputEAPOL]
 
     def __init__(self, *args, **kwargs):
         super(EAPMD5Method, self).__init__(*args, **kwargs)
         self._contexts = {}
 
-    @set_ev_cls(EventStartEAPOL)
+    @set_ev_cls(eap_events.EventStartEAPOL)
     def _event_start_eap_handler(self, ev):
         """Received an EAPoL Start packet
         Reply with an EAP Request Identify packet
@@ -134,9 +82,11 @@ class EAPMD5Method(app_manager.RyuApp):
         resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
                                   type_=eap.EAP_TYPE_IDENTIFY))
 
-        self.send_event_to_observers(EventOutputEAPOL(ev.dpid, ev.port, resp))
+        self.send_event_to_observers(
+            eap_events.EventOutputEAPOL(ev.dpid, ev.port, resp)
+        )
 
-    @set_ev_cls(EventLogoffEAPOL)
+    @set_ev_cls(eap_events.EventLogoffEAPOL)
     def _event_logoff_eap_handler(self, ev):
         """Received an EAPoL Logoff packet
         Reply with an EAP Request Identify packet
@@ -147,7 +97,7 @@ class EAPMD5Method(app_manager.RyuApp):
 
         ctx.logoff()
 
-    @set_ev_cls(EventStartEAPMD5Challenge)
+    @set_ev_cls(eap_events.EventStartEAPMD5Challenge)
     def _event_start_md5_challenge(self, ev):
         """Received an EAPoL Response Identify packet
         Reply with an EAP Request MD5 Challenge packet
@@ -168,9 +118,11 @@ class EAPMD5Method(app_manager.RyuApp):
                                   type_=eap.EAP_TYPE_MD5_CHALLENGE,
                                   data=c))
 
-        self.send_event_to_observers(EventOutputEAPOL(ev.dpid, ev.port, resp))
+        self.send_event_to_observers(
+            eap_events.EventOutputEAPOL(ev.dpid, ev.port, resp)
+        )
 
-    @set_ev_cls(EventFinishEAPMD5Challenge)
+    @set_ev_cls(eap_events.EventFinishEAPMD5Challenge)
     def _event_finish_eap_md5_challenge(self, ev):
         """Received an EAPoL Response MD5 Challenge packet
         Reply with an EAP Success/Failure packet
@@ -196,7 +148,9 @@ class EAPMD5Method(app_manager.RyuApp):
         resp.add_protocol(eap.eap(identifier=ctx.identifier,
                                   code=code))
 
-        self.send_event_to_observers(EventOutputEAPOL(ev.dpid, ev.port, resp))
+        self.send_event_to_observers(
+            eap_events.EventOutputEAPOL(ev.dpid, ev.port, resp)
+        )
 
         self.logger.info("Authenticated user %s (%s) at port %d of switch"
                          " %016x", ctx.identity, ctx.src, ctx.port, ctx.dpid)
