@@ -78,7 +78,11 @@ class Authenticator(app_manager.RyuApp):
         if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
             sm_ev = eap_md5_sm.EventStartEAPOL(dpid, src, dst, msg.in_port)
 
-        # We received a EAPoL EAP frame
+        # We received an EAPoL logoff frame
+        if eapol_msg.type_ == eapol.EAPOL_TYPE_LOGOFF:
+            sm_ev = eap_md5_sm.EventLogoffEAPOL(dpid, msg.in_port)
+
+        # We received an EAPoL EAP frame
         elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:
             eap_msg = pkt.get_protocol(eap.eap)
 

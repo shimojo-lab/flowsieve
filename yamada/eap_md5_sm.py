@@ -24,6 +24,15 @@ class EventStartEAPOL(EventBase):
         self.port = port
 
 
+class EventLogoffEAPOL(EventBase):
+    """EAPoL logoff received
+    """
+    def __init__(self, dpid, port):
+        super(EventLogoffEAPOL, self).__init__()
+        self.dpid = dpid
+        self.port = port
+
+
 class EventStartEAPMD5Challenge(EventBase):
     """EAP identify response received
     """
@@ -111,6 +120,17 @@ class EAPMD5StateMachine(app_manager.RyuApp):
                                   type_=eap.EAP_TYPE_IDENTIFY))
 
         self.send_event_to_observers(EventOutputEAPOL(ev.dpid, ev.port, resp))
+
+    @set_ev_cls(EventLogoffEAPOL)
+    def _event_logoff_eap_handler(self, ev):
+        """Received an EAPoL Logoff packet
+        Reply with an EAP Request Identify packet
+        """
+        if (ev.dpid, ev.port) not in self._contexts:
+            return
+        ctx = self._contexts.get((ev.dpid, ev.port))
+
+        ctx.state = EAPMD5_STAETE_IDLE
 
     @set_ev_cls(EventStartEAPMD5Challenge)
     def _event_start_md5_challenge(self, ev):
