@@ -1,5 +1,13 @@
 ---
 - hosts: all
+
+  vars:
+    home_dir: /home/vagrant
+    xsupplicant_src: "{{ home_dir }}/xsupplicant"
+    xsupplicant_repo: https://titan.ais.cmc.osaka-u.ac.jp/core-grid/xsupplicant.git
+    direnv_url: https://github.com/zimbatm/direnv/releases/download/v2.6.0/direnv.linux-amd64
+    direnv_sha: 8b9fc5362e8f4d338f73fe022026423ffbf72c316a6ef8447629e08a1488422d
+
   tasks:
     - name: Install required apt packages
       apt: name={{ item }} state=latest
@@ -10,9 +18,10 @@
         - python2.7-dev
     - name: Stop Open vSwitch controller service
       service: name=openvswitch-controller state=stopped enabled=no
+
     - name: Download direnv
-      get_url: url=https://github.com/zimbatm/direnv/releases/download/v2.6.0/direnv.linux-amd64
-               sha256sum=8b9fc5362e8f4d338f73fe022026423ffbf72c316a6ef8447629e08a1488422d
+      get_url: url={{ direnv_url }}
+               sha256sum={{ direnv_sha }}
                dest=/usr/local/bin/direnv
                owner=root
                group=root
@@ -25,6 +34,7 @@
             mode=0644
     - name: Install virtualenv
       pip: name=virtualenv
+
     - name: Install apt packages for xsupplicant
       apt: name={{ item }} state=latest
       with_items:
@@ -38,28 +48,28 @@
         - libiw-dev
     - name: Prevent git hangs
       copy: content='Host *\nServerAliveInterval 60\n'
-            dest=/home/vagrant/.ssh/config
+            dest={{ home_dir }}/.ssh/config
       become: no
     - name: Clone xsupplicant source code
       git: repo=https://titan.ais.cmc.osaka-u.ac.jp/core-grid/xsupplicant.git
-           dest=/home/vagrant/xsupplicant depth=1 accept_hostkey=yes
+           dest={{ xsupplicant_src }} depth=1 accept_hostkey=yes
       become: no
     - name: Generate configure file for xsupplicant
       command: ./autoregen.sh
-        chdir=/home/vagrant/xsupplicant/xsupplicant
+        chdir={{ xsupplicant_src }}/xsupplicant
         creates=configure
       become: no
     - name: Configure xsupplicant
       shell: LIBS="-lz -ldl" ./configure
-        chdir=/home/vagrant/xsupplicant/xsupplicant
+        chdir={{ xsupplicant_src }}/xsupplicant
         creates=Makefile
       become: no
     - name: Make xsupplicant
       command: make
-        chdir=/home/vagrant/xsupplicant/xsupplicant
+        chdir={{ xsupplicant_src }}/xsupplicant
         creates=src/xsupplicant
       become: no
     - name: Make install xsupplicant
       command: make install
-        chdir=/home/vagrant/xsupplicant/xsupplicant
+        chdir={{ xsupplicant_src }}/xsupplicant
         creates=/usr/local/sbin/xsupplicant
