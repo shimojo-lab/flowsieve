@@ -64,17 +64,8 @@ Vagrant.configure(2) do |config|
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
-  config.vm.provision "shell", privileged: false, inline: <<-SHELL
-    sudo apt-get install -y language-pack-ja mininet
-    sudo service openvswitch-controller stop
-    sudo update-rc.d openvswitch-controller disable
-    wget -q "https://github.com/direnv/direnv/releases/download/v2.6.0/direnv.linux-amd64"
-
-    sudo mv direnv.linux-amd64 /usr/local/bin/direnv
-    sudo chmod +x /usr/local/bin/direnv
-    sudo apt-get -y install python-pip python2.7-dev
-    sudo pip install virtualenv
-
-    echo 'eval "$(direnv hook bash)"' >> /home/vagrant/.bashrc
-  SHELL
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "playbook.yml"
+    ansible.sudo = true
+  end
 end
