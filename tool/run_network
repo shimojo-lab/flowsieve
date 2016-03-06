@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from mininet.topo import Topo
+from mininet.topo import Topo, SingleSwitchTopo
 from mininet.net import Mininet
 from mininet.node import RemoteController
 from mininet.util import dumpNodeConnections
@@ -27,7 +27,7 @@ class YamadaTopo(Topo):
 
 def launchNetwork():
     "Create and test a simple network"
-    topo = YamadaTopo(2, 2)
+    topo = SingleSwitchTopo(4)
     net = Mininet(topo=topo, controller=RemoteController)
 
     net.start()
