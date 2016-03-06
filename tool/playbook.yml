@@ -50,6 +50,10 @@
       copy: content='Host *\nServerAliveInterval 60\n'
             dest={{ home_dir }}/.ssh/config
       become: no
+    - name: Set git postBuffer
+      copy: content='[http]\npostBuffer = 2M\n'
+            dest={{ home_dir }}/.gitconfig
+      become: no
     - name: Clone xsupplicant source code
       git: repo=https://titan.ais.cmc.osaka-u.ac.jp/core-grid/xsupplicant.git
            dest={{ xsupplicant_src }} depth=1 accept_hostkey=yes
