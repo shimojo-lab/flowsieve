@@ -27,7 +27,7 @@ class YamadaTopo(Topo):
 
 def launchNetwork():
     "Create and test a simple network"
-    topo = YamadaTopo(nc=2, ns=2)
+    topo = YamadaTopo(2, 2)
     net = Mininet(topo=topo, controller=RemoteController)
 
     net.start()
