@@ -9,6 +9,9 @@ roles:
       - Marketing file server
 
 users:
+  - name: TIS
+    password: TIS
+    role: development
   - name: user1
     password: user1password
     role: development

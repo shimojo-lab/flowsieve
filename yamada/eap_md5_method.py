@@ -74,7 +74,7 @@ class EAPMD5Method(app_manager.RyuApp):
         """
         if (ev.dpid, ev.port) not in self._contexts:
             self._contexts[(ev.dpid, ev.port)] = EAPMD5Context(
-                self, ev.dpid, ev.port, ev.src, ev.dst)
+                ev.dpid, ev.port, ev.src, ev.dst)
         ctx = self._contexts.get((ev.dpid, ev.port))
 
         if not ctx.is_idle():
@@ -138,8 +138,14 @@ class EAPMD5Method(app_manager.RyuApp):
             # Unknown peer or inconsistent state
             return
 
-        valid = self._check_challenge_response(ev.challenge, ev.identifier,
-                                               ctx.challenge, "TIS")
+        user = self._user_store.get_user(ctx.identity)
+        if user is not None:
+            valid = self._check_challenge_response(ev.challenge, ev.identifier,
+                                                   ctx.challenge,
+                                                   user.password)
+        else:
+            valid = False
+
         if valid:
             code = eap.EAP_CODE_SUCCESS
             ctx.logon()
