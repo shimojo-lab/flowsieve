@@ -2,10 +2,15 @@
 
 from mininet.topo import Topo, SingleSwitchTopo
 from mininet.net import Mininet
-from mininet.node import RemoteController
+from mininet.node import RemoteController, Host
 from mininet.util import dumpNodeConnections
-from mininet.log import setLogLevel
+from mininet.log import setLogLevel, info
 from mininet.cli import CLI
+
+from functools import partial
+from xml.etree import ElementTree
+from xml.etree.ElementTree import Element, SubElement, Comment
+from xml.dom import minidom
 
 
 class YamadaTopo(Topo):
@@ -24,18 +29,91 @@ class YamadaTopo(Topo):
             host = self.addHost("server%s" % (i + 1))
             self.addLink(host, switch)
 
+def prettify(elem):
+    # Return a pretty-printed XML string for the Element.
+    rough_string = ElementTree.tostring(elem, 'utf-8')
+    reparsed = minidom.parseString(rough_string)
+    return reparsed.toprettyxml(indent="  ")
+
+def generateXSupplicantConf(host):
+    top = Element("XsupplicantConfig",
+                  {"version":"1.0",
+                   "generated_data":"1/20/07",
+                  })
+    glb = SubElement(top, "Globals")
+    devices = SubElement(top, "Devices")
+    interface = SubElement(devices, "Interface")
+    description = SubElement(interface, "Description")
+    description.text = host.name + "-eth0"
+    mac = SubElement(interface, "MAC")
+    mac.text = host.MAC(host.name + "-eth0").replace(":", "-")
+    wireless = SubElement(interface, "Wireless")
+    wireless.text = "no"
+    print prettify(top)
+    f = open("/tmp/" + host.name + "/etc/xsupplicant.conf", "w")
+    f.write(prettify(top))
+    f.close()
+
+def generateXSupplicantUserConf(host):
+    top = Element("XSupplicantConfig",
+                  {"version":"1.0",
+                   "generated_data":"1/20/07",
+                  })
+    connections = SubElement(top, "Connections")
+    connection = SubElement(connections, "Connection")
+    connectionName = SubElement(connection, "Name")
+    connectionName.text = "test"
+    connectionProfile = SubElement(connection, "Profile")
+    connectionProfile.text = "test"
+    connectionItf = SubElement(connection, "Interface")
+    connectionItf.text = host.name + "-eth0"
+
+    profiles = SubElement(top, "Profiles")
+    profile = SubElement(profiles, "Profile")
+    profileName = SubElement(profile, "Name")
+    profileName.text = "test"
+    profileIdentity = SubElement(profile, "Identity")
+    profileIdentity.text = "TIS"
+    profileEAP = SubElement(profile, "EAP")
+    eapType = SubElement(profileEAP, "Type")
+    eapType.text = "MD5"
+    eapPasswd = SubElement(profileEAP, "Password")
+    eapPasswd.text = "TIS"
+
+    print prettify(top)
+    f = open("/tmp/" + host.name  +"/etc/xsupplicant.user.conf", "w")
+    f.write(prettify(top))
+    f.close()
 
 def launchNetwork():
     "Create and test a simple network"
     topo = SingleSwitchTopo(4)
-    net = Mininet(topo=topo, controller=RemoteController)
-
+    privateDirs = [ ( '/tmp', '/tmp/%(name)s/tmp' ),
+            ('/etc', '/tmp/%(name)s/etc'),
+            ('/var/log', '/tmp/%(name)s/var/log'),
+            ('/var/run', '/tmp/%(name)s/var/run'),
+            '/var/mn' ]
+    host = partial(Host, privateDirs=privateDirs)
+    net = Mininet(topo=topo, host=host, controller=RemoteController)
     net.start()
+    directories = [ directory[0] if isinstance(directory, tuple)
+                    else directory for directory in privateDirs ]
+    info( 'Private Directories:', directories, '\n' )
+
+    for host in net.hosts:
+        generateXSupplicantConf(host)
+        generateXSupplicantUserConf(host)
+
+    for host in net.hosts:
+        host.cmd(" xsupplicant -c /etc/xsupplicant.conf -i " + host.name + "-eth0")
+
     print "Dumping host connections"
     dumpNodeConnections(net.hosts)
     print "Testing network connectivity"
     net.pingAll()
     CLI(net)
+    for host in net.hosts:
+        host.cmd("kill %" + "xsupplicant")
     net.stop()
 
 
