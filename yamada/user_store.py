@@ -1,28 +1,34 @@
+import logging
+
 from yaml import load
 
-from ryu.base import app_manager
 
+class UserStore(object):
+    DEFAULT_USER_ROLE_FILE = "conf/user_store.yml"
 
-class UserStore(app_manager.RyuApp):
-    USER_ROLE_FILE = "conf/user-role.yml"
-
-    def __init__(self, *args, **kwargs):
-        super(UserStore, self).__init__(*args, **kwargs)
-        self.user_role_file = self.USER_ROLE_FILE
+    def __init__(self, file_name=None):
+        super(UserStore, self).__init__()
+        if file_name is None:
+            file_name = UserStore.DEFAULT_USER_ROLE_FILE
+        self.user_role_file = file_name
         self.users = {}
         self.roles = {}
+        self._logger = logging.getLogger(self.__class__.__name__)
+
         self._read_definition_file()
 
     def _read_definition_file(self):
         try:
             data = load(file(self.user_role_file))
         except IOError:
-            self.logger.error("Could not open %s", self.user_role_file)
+            self._logger.error("Could not open %s", self.user_role_file)
             return
 
         if "users" in data:
+            self._logger.info("Reading user data")
             self._store_user_data(data["users"])
         if "roles" in data:
+            self._logger.info("Reading role data")
             self._store_role_data(data["roles"])
 
     def _store_user_data(self, users):

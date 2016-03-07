@@ -4,13 +4,14 @@ State machine for EAP-MD5 authentication flow
 
 import struct
 import md5
+import logging
 
 from ryu.base import app_manager
 from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import packet, ethernet
 from transitions import Machine
 
-from yamada import eap, eapol, eap_events
+from yamada import eap, eapol, eap_events, user_store
 
 
 class EAPMD5Context(object):
@@ -19,10 +20,8 @@ class EAPMD5Context(object):
 
     _STATES = ["idle", "ident", "challenge", "authenticated"]
 
-    def __init__(self, parent, dpid, port, src, dst):
+    def __init__(self, dpid, port, src, dst):
         super(EAPMD5Context, self).__init__()
-        # EAPMD5Method application object
-        self._parent = parent
         # The datapath we're working on
         self.dpid = dpid
         # The port number we're working on
@@ -35,6 +34,9 @@ class EAPMD5Context(object):
         self.challenge = ""
         # Identity
         self.identity = ""
+
+        # Logger
+        self._logger = logging.getLogger(self.__class__.__name__)
         # State machine
         self._state_machine = Machine(model=self, states=EAPMD5Context._STATES,
                                       initial="idle")
@@ -50,9 +52,9 @@ class EAPMD5Context(object):
         self.challenge = challenge
 
     def on_enter_authenticated(self):
-        self._parent.logger.info("Authenticated user %s (%s) at port %d of"
-                                 " switch %016x", self.identity, self.src,
-                                 self.port, self.dpid)
+        self._logger.info("Authenticated user %s (%s) at port %d of"
+                          " switch %016x", self.identity, self.src,
+                          self.port, self.dpid)
 
 
 class EAPMD5Method(app_manager.RyuApp):
@@ -63,6 +65,7 @@ class EAPMD5Method(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(EAPMD5Method, self).__init__(*args, **kwargs)
         self._contexts = {}
+        self._user_store = user_store.UserStore()
 
     @set_ev_cls(eap_events.EventStartEAPOL)
     def _event_start_eap_handler(self, ev):
