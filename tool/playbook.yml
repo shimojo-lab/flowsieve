@@ -7,8 +7,11 @@
     xsupplicant_repo: https://titan.ais.cmc.osaka-u.ac.jp/core-grid/xsupplicant.git
     direnv_url: https://github.com/zimbatm/direnv/releases/download/v2.6.0/direnv.linux-amd64
     direnv_sha: 8b9fc5362e8f4d338f73fe022026423ffbf72c316a6ef8447629e08a1488422d
+    mnexec_url: https://raw.githubusercontent.com/mininet/mininet/96ea5367dbea7b77e6b7454c1de85b30b7ba7035/mnexec.c
+    mnexec_sha: 4377b573054f75707f37d8c2b8d7d8a7f12647e7b6eeaaeca529129001606251
 
   tasks:
+
     - name: Install required apt packages
       apt: name={{ item }} state=latest
       with_items:
@@ -16,8 +19,15 @@
         - mininet
         - python-pip
         - python2.7-dev
-    - name: Stop Open vSwitch controller service
-      service: name=openvswitch-controller state=stopped enabled=no
+    - name: Download mnexec
+      get_url: url={{ mnexec_url }}
+               sha256sum={{ mnexec_sha }}
+               dest={{ home_dir }}/mnexec.c
+      become: no
+    - name: Build mnexec
+      command: gcc -O3 -Wall -Wextra -o /usr/bin/mnexec mnexec.c
+        chdir={{ home_dir }}
+        creates=/usr/bin/mnexec
 
     - name: Download direnv
       get_url: url={{ direnv_url }}
