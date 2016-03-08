@@ -1,8 +1,9 @@
 from nose.tools import eq_
+
 from ryu.lib.packet import packet
 
-from yamada.eapol import eapol
 from yamada.eap import eap
+from yamada.eapol import eapol
 
 EAPOL_TEST_CASES = [
     ([eapol(version=0x01, type_=0x01)], "\x01\x01\x00\x00"),

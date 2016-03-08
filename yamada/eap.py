@@ -1,6 +1,6 @@
-import struct
-import random
 import os
+import random
+import struct
 
 from ryu.lib import stringify
 from ryu.lib.packet import packet_base
