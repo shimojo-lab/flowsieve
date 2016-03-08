@@ -59,13 +59,13 @@ class eap(packet_base.PacketBase):
 
         if code in [EAP_CODE_REQUEST, EAP_CODE_RESPONSE]:
             offset = eap._MIN_LEN
-            type_buf = buf[offset:offset+eap._TYPE_LEN]
+            type_buf = buf[offset:offset + eap._TYPE_LEN]
             (type_,) = struct.unpack_from(eap._TYPE_PACK_STR, type_buf)
             msg.type_ = type_
 
             offset += eap._TYPE_LEN
             type_data_size = length - eap._MIN_LEN - eap._TYPE_LEN
-            type_data_buf = buf[offset:offset+type_data_size]
+            type_data_buf = buf[offset:offset + type_data_size]
             cls_ = eap._EAP_TYPES.get(type_)
             if cls_:
                 msg.data = cls_.parser(type_data_buf)
@@ -140,7 +140,7 @@ class eap_md5_challenge(stringify.StringifyMixin):
     @classmethod
     def parser(cls, buf):
         (length,) = struct.unpack_from(cls._PACK_STR, buf)
-        return cls(buf[cls._MIN_LEN:cls._MIN_LEN+length])
+        return cls(buf[cls._MIN_LEN:cls._MIN_LEN + length])
 
     def serialize(self):
         hdr = bytearray(struct.pack(eap_md5_challenge._PACK_STR,

@@ -115,13 +115,13 @@ class Authenticator(app_manager.RyuApp):
                 # This is a EAP Identify Response
                 if eap_msg.type_ == eap.EAP_TYPE_IDENTIFY:
                     sm_ev = eap_events.EventStartEAPMD5Challenge(
-                            dpid, msg.in_port, eap_msg.data.identity)
+                        dpid, msg.in_port, eap_msg.data.identity)
 
                 # This is an EAP MD5 Challenge Response
                 elif eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
                     sm_ev = eap_events.EventFinishEAPMD5Challenge(
-                            dpid, msg.in_port, eap_msg.data.challenge,
-                            eap_msg.identifier)
+                        dpid, msg.in_port, eap_msg.data.challenge,
+                        eap_msg.identifier)
 
         if sm_ev is not None:
             self.send_event_to_observers(sm_ev)

@@ -45,7 +45,7 @@ class eapol(packet_base.PacketBase):
         if type_ == EAPOL_TYPE_START:
             return msg, None, None
         elif type_ == EAPOL_TYPE_EAP:
-            return msg, eap, buf[eapol._MIN_LEN:eapol._MIN_LEN+length]
+            return msg, eap, buf[eapol._MIN_LEN:eapol._MIN_LEN + length]
         elif type_ == EAPOL_TYPE_LOGOFF:
             return msg, None, None
 
