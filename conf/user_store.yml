@@ -1,10 +1,16 @@
 roles:
   - name: development
+    allowed_hosts:
+      - name: hoge
+        mac: ff:ff:ff:ff:ff:ff
     allowed_resources:
       - Development Server
       - Test Server
       - Test Server 2
   - name: marketing
+    allowed_hosts:
+      - name: hoge
+        mac: ff:ff:ff:ff:ff:ff
     allowed_resources:
       - Marketing file server
 
