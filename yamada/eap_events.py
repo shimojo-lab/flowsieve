@@ -50,3 +50,12 @@ class EventOutputEAPOL(EventBase):
         self.dpid = dpid
         self.port = port
         self.pkt = pkt
+
+
+class EventPortAuthorized(EventBase):
+    """Activate authorized port
+    """
+    def __init__(self, dpid, port):
+        super(EventPortAuthorized, self).__init__()
+        self.dpid = dpid
+        self.port = port

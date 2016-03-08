@@ -60,7 +60,7 @@ class EAPMD5Context(object):
 class EAPMD5Method(app_manager.RyuApp):
     """EAP-MD5 authentication method implementation
     """
-    _EVENTS = [eap_events.EventOutputEAPOL]
+    _EVENTS = [eap_events.EventOutputEAPOL, eap_events.EventPortAuthorized]
 
     def __init__(self, *args, **kwargs):
         super(EAPMD5Method, self).__init__(*args, **kwargs)
@@ -149,6 +149,9 @@ class EAPMD5Method(app_manager.RyuApp):
         if valid:
             code = eap.EAP_CODE_SUCCESS
             ctx.logon()
+            self.send_event_to_observers(
+                eap_events.EventPortAuthorized(ev.dpid, ev.port)
+            )
         else:
             code = eap.EAP_CODE_FAILURE
             ctx.logoff()

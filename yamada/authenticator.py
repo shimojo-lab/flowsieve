@@ -26,6 +26,9 @@ class Authenticator(app_manager.RyuApp):
         "eap_md5_method": eap_md5_method.EAPMD5Method,
     }
 
+    COOKIE_EAPOL = 1
+    COOKIE_DROP = 2
+
     def __init__(self, *args, **kwargs):
         super(Authenticator, self).__init__(*args, **kwargs)
         self._dps = kwargs["dpset"]
@@ -40,11 +43,30 @@ class Authenticator(app_manager.RyuApp):
         actions = [ofproto_parser.OFPActionOutput(ofproto.OFPP_CONTROLLER)]
 
         mod = dp.ofproto_parser.OFPFlowMod(
-            datapath=dp, match=match, cookie=0,
+            datapath=dp, match=match, cookie=Authenticator.COOKIE_EAPOL,
             command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
             priority=0xffff,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
         dp.send_msg(mod)
+
+    def _install_drop_flow(self, dp):
+        """Install flow rules to drop all packets
+        """
+        ofproto = dp.ofproto
+        ofproto_parser = dp.ofproto_parser
+
+        for port in self._dps.get_ports(dp.id):
+            if dp.id == int(port.hw_addr.replace(":", ""), 16):
+                # This is an internal port
+                continue
+
+            match = ofproto_parser.OFPMatch(in_port=port.port_no)
+            mod = dp.ofproto_parser.OFPFlowMod(
+                datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
+                command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
+                priority=0x0000,
+                flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
+            dp.send_msg(mod)
 
     @set_ev_cls(ofp_event.EventOFPStateChange, MAIN_DISPATCHER)
     def _state_change_handler(self, ev):
@@ -54,6 +76,7 @@ class Authenticator(app_manager.RyuApp):
 
         self.logger.info("Datapath %016x connected", dp.id)
         self._install_eapol_flow(dp)
+        self._install_drop_flow(dp)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
@@ -129,3 +152,17 @@ class Authenticator(app_manager.RyuApp):
             buffer_id=ofproto.OFP_NO_BUFFER,
             data=ev.pkt.data)
         dp.send_msg(out)
+
+    @set_ev_cls(eap_events.EventPortAuthorized)
+    def _event_port_authorized_handler(self, ev):
+        dp = self._dps.get(ev.dpid)
+        if dp is None:
+            return
+        ofproto_parser = dp.ofproto_parser
+        ofproto = dp.ofproto
+
+        match = ofproto_parser.OFPMatch(in_port=ev.port)
+        mod = dp.ofproto_parser.OFPFlowMod(
+            datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
+            command=ofproto.OFPFC_DELETE)
+        dp.send_msg(mod)
