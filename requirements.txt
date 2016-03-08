@@ -2,6 +2,8 @@ Babel==2.2.0
 debtcollector==1.3.0
 eventlet==0.18.4
 flake8==2.5.4
+flake8-double-quotes==0.0.1
+flake8-import-order==0.7
 funcsigs==0.4
 greenlet==0.4.9
 mccabe==0.4.0
@@ -11,6 +13,7 @@ nose==1.3.7
 oslo.config==3.9.0
 pbr==1.8.1
 pep8==1.7.0
+pep8-naming==0.3.3
 pyflakes==1.1.0
 pytz==2015.7
 PyYAML==3.11
@@ -21,5 +24,4 @@ six==1.10.0
 stevedore==1.12.0
 transitions==0.3.1
 WebOb==1.5.1
-wheel==0.29.0
 wrapt==1.10.6
