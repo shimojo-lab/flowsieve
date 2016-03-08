@@ -50,9 +50,7 @@ def generateXSupplicantConf(host):
     wireless = SubElement(interface, "Wireless")
     wireless.text = "no"
     print prettify(top)
-    f = open("/tmp/" + host.name + "/etc/xsupplicant.conf", "w")
-    f.write(prettify(top))
-    f.close()
+    host.cmd( "echo " + "\'" + prettify(top) + "\'" + " > /etc/xsupplicant.conf ")
 
 def generateXSupplicantUserConf(host):
     top = Element("XSupplicantConfig",
@@ -81,9 +79,7 @@ def generateXSupplicantUserConf(host):
     eapPasswd.text = "TIS"
 
     print prettify(top)
-    f = open("/tmp/" + host.name  +"/etc/xsupplicant.user.conf", "w")
-    f.write(prettify(top))
-    f.close()
+    host.cmd( "echo " + "\'" + prettify(top) + "\'" + " > /etc/xsupplicant.user.conf ")
 
 def launchNetwork():
     "Create and test a simple network"
