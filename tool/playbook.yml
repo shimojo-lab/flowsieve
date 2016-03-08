@@ -25,9 +25,14 @@
                dest={{ home_dir }}/mnexec.c
       become: no
     - name: Build mnexec
-      command: gcc -O3 -Wall -Wextra -o /usr/bin/mnexec mnexec.c
+      command: gcc -O3 -Wall -Wextra -o mnexec mnexec.c
         chdir={{ home_dir }}
-        creates=/usr/bin/mnexec
+        creates=mnexec
+      become: no
+    - name: Install mnexec
+      command: install -o root -g root -m 0755 mnexec /usr/bin/mnexec
+        chdir={{ home_dir }}
+        creates=/usr/local/bin/mnexec
 
     - name: Download direnv
       get_url: url={{ direnv_url }}
