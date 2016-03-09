@@ -1,7 +1,5 @@
 import logging
 
-from netaddr import AddrFormatError, EUI, IPAddress
-
 from yaml import YAMLError, load
 
 
@@ -15,13 +13,38 @@ class UserStore(object):
         self.user_role_file = file_name
         self.users = {}
         self.roles = {}
-        self.resources = {}
         self._logger = logging.getLogger(self.__class__.__name__)
 
         self._read_definition_file()
 
     def get_user(self, user_name):
         return self.users.get(user_name)
+
+    def authorize_access(self, user1, user2):
+        if user1 is None or user2 is None:
+            return False
+        if user1.role not in self.roles:
+            return False
+        if user2.role not in self.roles:
+            return False
+
+        role1 = self.roles[user1.role]
+        role2 = self.roles[user2.role]
+
+        # If any of the two is public, grant access
+        if role1.acl.is_public or role2.acl.is_public:
+            return True
+
+        # Allow intra-role communication if role is a family
+        if user1.role == user2.role:
+            if role1.acl.is_family:
+                return True
+
+        # Check for both directions
+        check1 = user2.name in role1.acl.allowed_users
+        check2 = user1.name in role2.acl.allowed_users
+
+        return check1 and check2
 
     def _read_definition_file(self):
         try:
@@ -34,15 +57,14 @@ class UserStore(object):
                                  self.user_role_file)
             return
 
-        if "resources" in data:
-            self._logger.info("Reading resource data")
-            self._store_resource_data(data["resources"])
         if "roles" in data:
             self._logger.info("Reading role data")
             self._store_role_data(data["roles"])
         if "users" in data:
             self._logger.info("Reading user data")
             self._store_user_data(data["users"])
+
+        self._check_inconsistency()
 
     def _store_user_data(self, users):
         for user in users:
@@ -54,10 +76,6 @@ class UserStore(object):
             role = user["role"]
             u = User(name, password, role)
 
-            if role not in self.roles:
-                self._logger.warning("Unknown role %s for user %s",
-                                     role, name)
-                continue
             if name in self.users:
                 self._logger.warning("Duplicate user name %s", name)
                 continue
@@ -69,48 +87,21 @@ class UserStore(object):
                 continue
 
             name = role["name"]
-            allowed_resources = []
-            for resource in role["allowed_resources"]:
-                if resource not in self.resources:
-                    self._logger.warning("Unknown resource %s for role %s",
-                                         resource, role)
-                    continue
-                allowed_resources += resource
 
-            r = Role(name, allowed_resources)
+            is_public = role.get("public", False)
+            is_family = role.get("family", False)
+            allowed_users = role.get("allowed_users")
+            acl = ACL(is_public, is_family, allowed_users)
+
+            r = Role(name, acl)
             if name in self.roles:
                 self._logger.warning("Duplicate role name %s", name)
                 continue
             self.roles[name] = r
 
-    def _store_resource_data(self, resources):
-        for resource in resources:
-            if not self._validate_resource_keys(resource):
-                continue
-
-            name = resource["name"]
-            mac = None
-            ip = None
-
-            if "mac" in resource:
-                try:
-                    mac = EUI(resource["mac"])
-                except AddrFormatError:
-                    self._logger.warning("Malformed MAC address %s",
-                                         resource["mac"])
-            if "ip" in resource:
-                try:
-                    ip = IPAddress(resource["ip"])
-                except AddrFormatError:
-                    self._logger.warning("Malformed IP address %s",
-                                         resource["ip"])
-
-            r = Resource(name, mac, ip)
-
-            if name in self.resources:
-                self._logger.warning("Duplicate resource name %s", name)
-                continue
-            self.resources[name] = r
+    def _check_inconsistency(self):
+        # TODO Check incosistency in models and relations.
+        pass
 
     def _validate_user_keys(self, user):
         return "name" in user and "password" in user and "role" in user
@@ -118,26 +109,12 @@ class UserStore(object):
     def _validate_role_keys(self, role):
         return "name" in role
 
-    def _validate_resource_keys(self, resource):
-        if "name" not in resource:
-            return False
-
-        return "ip" in resource or "mac" in resource
-
-
-class Resource(object):
-    def __init__(self, name, mac=None, ip=None):
-        super(Resource, self).__init__()
-        self.name = name
-        self.mac = mac
-        self.ip = ip
-
 
 class Role(object):
-    def __init__(self, name, allowed_resources):
+    def __init__(self, name, acl):
         super(Role, self).__init__()
         self.name = name
-        self.allowed_resources = allowed_resources
+        self.acl = acl
 
 
 class User(object):
@@ -146,3 +123,15 @@ class User(object):
         self.name = name
         self.password = password
         self.role = role
+
+
+class ACL(object):
+    # TODO Use kwargs for options
+    def __init__(self, is_public=False, is_family=False, allowed_users=None):
+        super(ACL, self).__init__()
+        self.is_family = is_family
+        self.is_public = is_public
+        if allowed_users is None:
+            self.allowed_users = []
+        else:
+            self.allowed_users = allowed_users

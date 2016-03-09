@@ -8,6 +8,7 @@ import struct
 
 from ryu.base import app_manager
 from ryu.controller.handler import set_ev_cls
+from ryu.lib.mac import BROADCAST_STR
 from ryu.lib.packet import ethernet, packet
 
 from transitions import Machine
@@ -21,16 +22,16 @@ class EAPMD5Context(object):
 
     _STATES = ["idle", "ident", "challenge", "authenticated"]
 
-    def __init__(self, dpid, port, src, dst):
+    def __init__(self, dpid, port, host_mac, sw_mac):
         super(EAPMD5Context, self).__init__()
         # The datapath we're working on
         self.dpid = dpid
         # The port number we're working on
         self.port = port
         # Supplicant MAC address
-        self.src = src
+        self.host_mac = host_mac
         # Authenticator MAC address (likely to be a multicast address)
-        self.dst = dst
+        self.sw_mac = sw_mac
         # MD5 challenge value
         self.challenge = ""
         # Identity
@@ -54,7 +55,7 @@ class EAPMD5Context(object):
 
     def on_enter_authenticated(self):
         self._logger.info("Authenticated user %s (%s) at port %d of"
-                          " switch %016x", self.identity, self.src,
+                          " switch %016x", self.identity, self.host_mac,
                           self.port, self.dpid)
 
 
@@ -67,6 +68,7 @@ class EAPMD5Method(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(EAPMD5Method, self).__init__(*args, **kwargs)
         self._contexts = {}
+        self._mac_to_contexts = {}
         self._user_store = user_store.UserStore()
 
     @set_ev_cls(eap_events.EventStartEAPOL)
@@ -75,8 +77,11 @@ class EAPMD5Method(app_manager.RyuApp):
         Reply with an EAP Request Identify packet
         """
         if (ev.dpid, ev.port) not in self._contexts:
-            self._contexts[(ev.dpid, ev.port)] = EAPMD5Context(
-                ev.dpid, ev.port, ev.src, ev.dst)
+            ctx = EAPMD5Context(ev.dpid, ev.port, ev.src, ev.dst)
+
+            self._contexts[(ev.dpid, ev.port)] = ctx
+            self._mac_to_contexts[ev.src] = ctx
+
         ctx = self._contexts.get((ev.dpid, ev.port))
 
         if not ctx.is_idle():
@@ -84,7 +89,7 @@ class EAPMD5Method(app_manager.RyuApp):
         ctx.start_ident()
 
         resp = packet.Packet()
-        resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
+        resp.add_protocol(ethernet.ethernet(src=ctx.sw_mac, dst=ctx.host_mac,
                                             ethertype=eapol.ETH_TYPE_EAPOL))
         resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
         resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
@@ -104,6 +109,9 @@ class EAPMD5Method(app_manager.RyuApp):
             return
 
         ctx.logoff()
+        if ctx.host_mac in self._mac_to_contexts:
+            del self._mac_to_contexts[ctx.host_mac]
+
         self.send_event_to_observers(
             eap_events.EventPortLoggedOff(ev.dpid, ev.port)
         )
@@ -122,7 +130,7 @@ class EAPMD5Method(app_manager.RyuApp):
         ctx.start_challenge(ev.identity, c.challenge)
 
         resp = packet.Packet()
-        resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
+        resp.add_protocol(ethernet.ethernet(src=ctx.sw_mac, dst=ctx.host_mac,
                                             ethertype=eapol.ETH_TYPE_EAPOL))
         resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
         resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
@@ -162,7 +170,7 @@ class EAPMD5Method(app_manager.RyuApp):
             ctx.logoff()
 
         resp = packet.Packet()
-        resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
+        resp.add_protocol(ethernet.ethernet(src=ctx.sw_mac, dst=ctx.host_mac,
                                             ethertype=eapol.ETH_TYPE_EAPOL))
         resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
         resp.add_protocol(eap.eap(identifier=ev.identifier,
@@ -182,3 +190,30 @@ class EAPMD5Method(app_manager.RyuApp):
         m.update(challenge)
 
         return m.digest() == response
+
+    def _get_user_by_mac(self, mac):
+        """Get user object by source MAC address"""
+        if mac not in self._mac_to_contexts:
+            return None
+
+        user_name = self._mac_to_contexts[mac].identity
+
+        return self._user_store.get_user(user_name)
+
+    @set_ev_cls(eap_events.AuthorizeRequest)
+    def _authorize_request_handler(self, req):
+        pkt = packet.Packet(req.msg.data)
+        eth = pkt.get_protocol(ethernet.ethernet)
+        src = eth.src
+        dst = eth.dst
+
+        src_user = self._get_user_by_mac(src)
+        dst_user = self._get_user_by_mac(dst)
+
+        result = self._user_store.authorize_access(src_user, dst_user)
+
+        if dst == BROADCAST_STR:
+            result = True
+
+        reply = eap_events.AuthorizeReply(req.dst, result)
+        self.reply_to_request(req, reply)

@@ -1,33 +1,29 @@
 roles:
-  - name: development
-    allowed_resources:
+  - name: Development
+    allowed_users:
       - Development Server
       - Test Server
-      - Test Server 2
-  - name: marketing
-    allowed_resources:
-      - Marketing file server
+      - Test Server
+    family: true
+  - name: Marketing
+    allowed_users:
+      - Marketing File Server
+  - name: Server
+    public: true
 
 users:
   - name: TIS
     password: TIS
-    role: development
-  - name: user1
-    password: user1password
-    role: development
-  - name: user2
-    password: user2password
-    role: development
-  - name: user3
-    password: user3password
-    role: marketing
-
-resources:
+    role: Development
+  - name: User1
+    password: TIS
+    role: Development
+  - name: User2
+    password: TIS
+    role: Marketing
   - name: Development Server
-    mac: bd:36:07:3a:20:1a
+    password: TIS
+    role: Server
   - name: Test Server
-    mac: bd:36:07:3a:20:1a
-  - name: Test Server 2
-    ip: 192.168.10.112
-  - name: Marketing file server
-    ip: 192.168.20.10
+    password: TIS
+    role: Server
