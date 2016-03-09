@@ -68,6 +68,20 @@ class Authenticator(app_manager.RyuApp):
                 flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
             dp.send_msg(mod)
 
+    def _install_drop_flow_to_port(self, dp, port_no):
+        """Install flow rules to drop all packets to port_no
+        """
+        ofproto = dp.ofproto
+        ofproto_parser = dp.ofproto_parser
+
+        match = ofproto_parser.OFPMatch(inport=port_no)
+        mod = dp.ofproto_parser.OFPFlowMod(
+            datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
+            command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
+            priority=0x0000,
+            flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
+        dp.send_msg(mod)
+
     def _delete_unnecessary_flow(self, dp, port_no):
         """Delete unnecessary rules when EAPOL Logoff happen
         """
@@ -191,3 +205,4 @@ class Authenticator(app_manager.RyuApp):
         if dp is None:
             return
         self._delete_unnecessary_flow(dp, ev.port)
+        self._install_drop_flow_to_port(dp, ev.port)
