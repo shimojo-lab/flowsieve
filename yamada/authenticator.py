@@ -52,21 +52,44 @@ class Authenticator(app_manager.RyuApp):
     def _install_drop_flow(self, dp):
         """Install flow rules to drop all packets
         """
-        ofproto = dp.ofproto
-        ofproto_parser = dp.ofproto_parser
 
         for port in self._dps.get_ports(dp.id):
             if dp.id == int(port.hw_addr.replace(":", ""), 16):
                 # This is an internal port
                 continue
+            self._install_drop_flow_to_port(dp, port.port_no)
 
-            match = ofproto_parser.OFPMatch(in_port=port.port_no)
-            mod = dp.ofproto_parser.OFPFlowMod(
-                datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
-                command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
-                priority=0x0000,
-                flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
-            dp.send_msg(mod)
+    def _install_drop_flow_to_port(self, dp, port_no):
+        """Install flow rules to drop all packets to port_no
+        """
+        ofproto = dp.ofproto
+        ofproto_parser = dp.ofproto_parser
+
+        match = ofproto_parser.OFPMatch(in_port=port_no)
+        mod = dp.ofproto_parser.OFPFlowMod(
+            datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
+            command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
+            priority=0x0000,
+            flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
+        dp.send_msg(mod)
+
+    def _delete_unnecessary_flow(self, dp, port_no):
+        """Delete unnecessary rules when EAPOL Logoff happen
+        """
+        ofproto = dp.ofproto
+        ofproto_parser = dp.ofproto_parser
+
+        match_inport = ofproto_parser.OFPMatch(in_port=port_no)
+        mod_inport = dp.ofproto_parser.OFPFlowMod(
+            datapath=dp, match=match_inport, cookie=Authenticator.COOKIE_DROP,
+            command=ofproto.OFPFC_DELETE)
+        dp.send_msg(mod_inport)
+
+        match_any = ofproto_parser.OFPMatch()
+        mod_outport = dp.ofproto_parser.OFPFlowMod(
+            datapath=dp, match=match_any, cookie=Authenticator.COOKIE_DROP,
+            command=ofproto.OFPFC_DELETE, out_port=port_no)
+        dp.send_msg(mod_outport)
 
     @set_ev_cls(ofp_event.EventOFPStateChange, MAIN_DISPATCHER)
     def _state_change_handler(self, ev):
@@ -166,3 +189,11 @@ class Authenticator(app_manager.RyuApp):
             datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
             command=ofproto.OFPFC_DELETE)
         dp.send_msg(mod)
+
+    @set_ev_cls(eap_events.EventPortLoggedOff)
+    def _event_port_loggedoff_handler(self, ev):
+        dp = self._dps.get(ev.dpid)
+        if dp is None:
+            return
+        self._delete_unnecessary_flow(dp, ev.port)
+        self._install_drop_flow_to_port(dp, ev.port)
