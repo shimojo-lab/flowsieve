@@ -35,6 +35,11 @@ class UserStore(object):
         if role1.acl.is_public or role2.acl.is_public:
             return True
 
+        # Allow intra-role communication if role is a family
+        if user1.role == user2.role:
+            if role1.acl.is_family:
+                return True
+
         # Check for both directions
         check1 = user2.name in role1.acl.allowed_users
         check2 = user1.name in role2.acl.allowed_users
@@ -84,8 +89,9 @@ class UserStore(object):
             name = role["name"]
 
             is_public = role.get("public", False)
+            is_family = role.get("family", False)
             allowed_users = role.get("allowed_users")
-            acl = ACL(is_public, allowed_users)
+            acl = ACL(is_public, is_family, allowed_users)
 
             r = Role(name, acl)
             if name in self.roles:
@@ -120,8 +126,10 @@ class User(object):
 
 
 class ACL(object):
-    def __init__(self, is_public=False, allowed_users=None):
+    # TODO Use kwargs for options
+    def __init__(self, is_public=False, is_family=False, allowed_users=None):
         super(ACL, self).__init__()
+        self.is_family = is_family
         self.is_public = is_public
         if allowed_users is None:
             self.allowed_users = []
