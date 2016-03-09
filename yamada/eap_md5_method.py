@@ -67,6 +67,7 @@ class EAPMD5Method(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(EAPMD5Method, self).__init__(*args, **kwargs)
         self._contexts = {}
+        self._mac_to_contexts = {}
         self._user_store = user_store.UserStore()
 
     @set_ev_cls(eap_events.EventStartEAPOL)
@@ -75,8 +76,11 @@ class EAPMD5Method(app_manager.RyuApp):
         Reply with an EAP Request Identify packet
         """
         if (ev.dpid, ev.port) not in self._contexts:
-            self._contexts[(ev.dpid, ev.port)] = EAPMD5Context(
-                ev.dpid, ev.port, ev.src, ev.dst)
+            ctx = EAPMD5Context(ev.dpid, ev.port, ev.src, ev.dst)
+
+            self._contexts[(ev.dpid, ev.port)] = ctx
+            self._mac_to_contexts[ev.src] = ctx
+
         ctx = self._contexts.get((ev.dpid, ev.port))
 
         if not ctx.is_idle():
@@ -104,6 +108,8 @@ class EAPMD5Method(app_manager.RyuApp):
             return
 
         ctx.logoff()
+        del self._mac_to_contexts[ctx.host_mac]
+
         self.send_event_to_observers(
             eap_events.EventPortLoggedOff(ev.dpid, ev.port)
         )
@@ -182,3 +188,12 @@ class EAPMD5Method(app_manager.RyuApp):
         m.update(challenge)
 
         return m.digest() == response
+
+    def _get_user_by_mac(self, mac):
+        """Get user object by source MAC address"""
+        if mac not in self._mac_to_contexts:
+            return None
+
+        user_name = self._mac_to_contexts[mac].identity
+
+        return self._user_store.get_user(user_name)

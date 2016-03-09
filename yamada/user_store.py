@@ -13,7 +13,6 @@ class UserStore(object):
         self.user_role_file = file_name
         self.users = {}
         self.roles = {}
-        self.resources = {}
         self._logger = logging.getLogger(self.__class__.__name__)
 
         self._read_definition_file()
