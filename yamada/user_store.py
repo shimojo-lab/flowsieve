@@ -20,6 +20,25 @@ class UserStore(object):
     def get_user(self, user_name):
         return self.users.get(user_name)
 
+    def authorize_access(self, user1, user2):
+        if user1.role not in self.roles:
+            return False
+        if user2.role not in self.roles:
+            return False
+
+        role1 = self.roles[user1.role]
+        role2 = self.roles[user2.role]
+
+        # If any of the two is public, grant access
+        if role1.acl.is_public or role2.acl.is_public:
+            return True
+
+        # Check for both directions
+        check1 = user2.name in role1.acl.allowed_users
+        check2 = user1.name in role2.acl.allowed_users
+
+        return check1 and check2
+
     def _read_definition_file(self):
         try:
             data = load(file(self.user_role_file))
