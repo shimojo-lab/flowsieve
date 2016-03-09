@@ -1,5 +1,7 @@
 import logging
 
+from netaddr import AddrFormatError, EUI, IPAddress
+
 from yaml import YAMLError, load
 
 
@@ -13,6 +15,7 @@ class UserStore(object):
         self.user_role_file = file_name
         self.users = {}
         self.roles = {}
+        self.resources = {}
         self._logger = logging.getLogger(self.__class__.__name__)
 
         self._read_definition_file()
@@ -31,6 +34,9 @@ class UserStore(object):
                                  self.user_role_file)
             return
 
+        if "resources" in data:
+            self._logger.info("Reading resource data")
+            self._store_resource_data(data["resources"])
         if "roles" in data:
             self._logger.info("Reading role data")
             self._store_role_data(data["roles"])
@@ -63,37 +69,75 @@ class UserStore(object):
                 continue
 
             name = role["name"]
-            allowed_hosts = []
-            for host in role["allowed_hosts"]:
-                allowed_hosts.append(host)
+            allowed_resources = []
+            for resource in role["allowed_resources"]:
+                if resource not in self.resources:
+                    self._logger.warning("Unknown resource %s for role %s",
+                                         resource, role)
+                    continue
+                allowed_resources += resource
 
-            r = Role(name, allowed_hosts)
+            r = Role(name, allowed_resources)
             if name in self.roles:
                 self._logger.warning("Duplicate role name %s", name)
                 continue
             self.roles[name] = r
 
+    def _store_resource_data(self, resources):
+        for resource in resources:
+            if not self._validate_resource_keys(resource):
+                continue
+
+            name = resource["name"]
+            mac = None
+            ip = None
+
+            if "mac" in resource:
+                try:
+                    mac = EUI(resource["mac"])
+                except AddrFormatError:
+                    self._logger.warning("Malformed MAC address %s",
+                                         resource["mac"])
+            if "ip" in resource:
+                try:
+                    ip = IPAddress(resource["ip"])
+                except AddrFormatError:
+                    self._logger.warning("Malformed IP address %s",
+                                         resource["ip"])
+
+            r = Resource(name, mac, ip)
+
+            if name in self.resources:
+                self._logger.warning("Duplicate resource name %s", name)
+                continue
+            self.resources[name] = r
+
     def _validate_user_keys(self, user):
         return "name" in user and "password" in user and "role" in user
 
     def _validate_role_keys(self, role):
-        if "name" not in role or "allowed_hosts" not in role:
+        return "name" in role
+
+    def _validate_resource_keys(self, resource):
+        if "name" not in resource:
             return False
 
-        for host in role["allowed_hosts"]:
-            if "name" not in host:
-                return False
-            if "mac" not in host and "ip" not in host:
-                return False
+        return "ip" in resource or "mac" in resource
 
-        return True
+
+class Resource(object):
+    def __init__(self, name, mac=None, ip=None):
+        super(Resource, self).__init__()
+        self.name = name
+        self.mac = mac
+        self.ip = ip
 
 
 class Role(object):
-    def __init__(self, name, allowed_hosts):
+    def __init__(self, name, allowed_resources):
         super(Role, self).__init__()
         self.name = name
-        self.allowed_hosts = allowed_hosts
+        self.allowed_resources = allowed_resources
 
 
 class User(object):
