@@ -100,8 +100,8 @@ def launchNetwork():
         generateXSupplicantConf(host)
         generateXSupplicantUserConf(host)
 
-    for host in net.hosts:
-        host.cmd(" xsupplicant -c /etc/xsupplicant.conf -i " + host.name + "-eth0")
+    # for host in net.hosts:
+    #     host.cmd(" xsupplicant -c /etc/xsupplicant.conf -i " + host.name + "-eth0")
 
     print "Dumping host connections"
     dumpNodeConnections(net.hosts)
