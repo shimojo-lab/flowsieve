@@ -1,46 +1,31 @@
 #!/usr/bin/python
 
-from mininet.topo import Topo, SingleSwitchTopo
-from mininet.net import Mininet
-from mininet.node import RemoteController, Host
-from mininet.util import dumpNodeConnections
-from mininet.log import setLogLevel, info
-from mininet.cli import CLI
-
 from functools import partial
-from xml.etree import ElementTree
-from xml.etree.ElementTree import Element, SubElement, Comment
+
 from xml.dom import minidom
+from xml.etree import ElementTree
+from xml.etree.ElementTree import Element, SubElement
 
+from mininet.cli import CLI
+from mininet.log import info, setLogLevel
+from mininet.net import Mininet
+from mininet.node import Host, RemoteController
+from mininet.topo import SingleSwitchTopo
+from mininet.util import dumpNodeConnections
 
-class YamadaTopo(Topo):
-    """Single switch connected to multiple clients and servers.
-    """
-    def build(self, nc=2, ns=2, **_opts):
-        self.nc = nc
-        self.ns = ns
-
-        switch = self.addSwitch("switch1")
-
-        for i in range(nc):
-            host = self.addHost("user%s" % (i + 1))
-            self.addLink(host, switch)
-        for i in range(ns):
-            host = self.addHost("server%s" % (i + 1))
-            self.addLink(host, switch)
 
 def prettify(elem):
     # Return a pretty-printed XML string for the Element.
-    rough_string = ElementTree.tostring(elem, 'utf-8')
+    rough_string = ElementTree.tostring(elem, "utf-8")
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
+
 def generateXSupplicantConf(host):
     top = Element("XsupplicantConfig",
-                  {"version":"1.0",
-                   "generated_data":"1/20/07",
-                  })
-    glb = SubElement(top, "Globals")
+                  {"version": "1.0",
+                   "generated_data": "1/20/07"})
+    SubElement(top, "Globals")
     devices = SubElement(top, "Devices")
     interface = SubElement(devices, "Interface")
     description = SubElement(interface, "Description")
@@ -50,13 +35,13 @@ def generateXSupplicantConf(host):
     wireless = SubElement(interface, "Wireless")
     wireless.text = "no"
     print prettify(top)
-    host.cmd( "echo " + "\'" + prettify(top) + "\'" + " > /etc/xsupplicant.conf ")
+    host.cmd("echo " + "\'" + prettify(top) + "\'"
+             + " > /etc/xsupplicant.conf")
 
 def generateXSupplicantUserConf(host):
     top = Element("XSupplicantConfig",
-                  {"version":"1.0",
-                   "generated_data":"1/20/07",
-                  })
+                  {"version": "1.0",
+                   "generated_data": "1/20/07"})
     connections = SubElement(top, "Connections")
     connection = SubElement(connections, "Connection")
     connectionName = SubElement(connection, "Name")
@@ -79,29 +64,27 @@ def generateXSupplicantUserConf(host):
     eapPasswd.text = "TIS"
 
     print prettify(top)
-    host.cmd( "echo " + "\'" + prettify(top) + "\'" + " > /etc/xsupplicant.user.conf ")
+    host.cmd("echo " + "\'" + prettify(top) + "\'"
+             + " > /etc/xsupplicant.user.conf ")
 
 def launchNetwork():
     "Create and test a simple network"
     topo = SingleSwitchTopo(4)
-    privateDirs = [ ( '/tmp', '/tmp/%(name)s/tmp' ),
-            ('/etc', '/tmp/%(name)s/etc'),
-            ('/var/log', '/tmp/%(name)s/var/log'),
-            ('/var/run', '/tmp/%(name)s/var/run'),
-            '/var/mn' ]
+    privateDirs = ["tmp", "/etc", ("/var/log", "/tmp/%(name)s/var/log"),
+                   "/var/run", "/var/mn"]
     host = partial(Host, privateDirs=privateDirs)
     net = Mininet(topo=topo, host=host, controller=RemoteController)
     net.start()
-    directories = [ directory[0] if isinstance(directory, tuple)
-                    else directory for directory in privateDirs ]
-    info( 'Private Directories:', directories, '\n' )
+    directories = [directory[0] if isinstance(directory, tuple)
+                   else directory for directory in privateDirs]
+    info('Private Directories:', directories, '\n')
 
     for host in net.hosts:
         generateXSupplicantConf(host)
         generateXSupplicantUserConf(host)
 
-    # for host in net.hosts:
-    #     host.cmd(" xsupplicant -c /etc/xsupplicant.conf -i " + host.name + "-eth0")
+    for host in net.hosts:
+        host.cmd("xsupplicant")
 
     print "Dumping host connections"
     dumpNodeConnections(net.hosts)
