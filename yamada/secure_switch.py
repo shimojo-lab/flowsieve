@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-An OpenFlow 1.0 L2 learning switch implementation.
+An L2 switch working in conjuction with Yamada Authenticator.
 """
 
 
@@ -31,11 +31,11 @@ from ryu.ofproto import ofproto_v1_0
 from yamada.eapol import ETH_TYPE_EAPOL
 
 
-class SimpleSwitch(app_manager.RyuApp):
+class SecureSwitch(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
 
     def __init__(self, *args, **kwargs):
-        super(SimpleSwitch, self).__init__(*args, **kwargs)
+        super(SecureSwitch, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
 
     def add_flow(self, datapath, in_port, dst, actions):
