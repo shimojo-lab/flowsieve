@@ -52,21 +52,12 @@ class Authenticator(app_manager.RyuApp):
     def _install_drop_flow(self, dp):
         """Install flow rules to drop all packets
         """
-        ofproto = dp.ofproto
-        ofproto_parser = dp.ofproto_parser
 
         for port in self._dps.get_ports(dp.id):
             if dp.id == int(port.hw_addr.replace(":", ""), 16):
                 # This is an internal port
                 continue
-
-            match = ofproto_parser.OFPMatch(in_port=port.port_no)
-            mod = dp.ofproto_parser.OFPFlowMod(
-                datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
-                command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
-                priority=0x0000,
-                flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
-            dp.send_msg(mod)
+            self._install_drop_flow_to_port(dp, port.port_no)
 
     def _install_drop_flow_to_port(self, dp, port_no):
         """Install flow rules to drop all packets to port_no
