@@ -1,4 +1,4 @@
-from ryu.controller.event import EventBase
+from ryu.controller.event import EventBase, EventReplyBase, EventRequestBase
 
 
 class EventStartEAPOL(EventBase):
@@ -68,3 +68,16 @@ class EventPortLoggedOff(EventBase):
         super(EventPortLoggedOff, self).__init__()
         self.dpid = dpid
         self.port = port
+
+
+class AuthorizeRequest(EventRequestBase):
+    def __init__(self, msg):
+        super(AuthorizeRequest, self).__init__()
+        self.dst = "EAPMD5Method"
+        self.msg = msg
+
+
+class AuthorizeReply(EventReplyBase):
+    def __init__(self, dst, result):
+        super(AuthorizeReply, self).__init__(dst)
+        self.result = result

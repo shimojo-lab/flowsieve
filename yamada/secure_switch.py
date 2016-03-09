@@ -28,11 +28,13 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
 
+from yamada import eap_events
 from yamada.eapol import ETH_TYPE_EAPOL
 
 
 class SecureSwitch(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
+    _EVENTS = [eap_events.AuthorizeRequest]
 
     def __init__(self, *args, **kwargs):
         super(SecureSwitch, self).__init__(*args, **kwargs)
@@ -49,6 +51,19 @@ class SecureSwitch(app_manager.RyuApp):
             command=ofproto.OFPFC_ADD, idle_timeout=60, hard_timeout=0,
             priority=ofproto.OFP_DEFAULT_PRIORITY,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
+        datapath.send_msg(mod)
+
+    def _install_ephemeral_drop_flow(self, datapath, src, dst):
+        ofproto = datapath.ofproto
+
+        match = datapath.ofproto_parser.OFPMatch(
+            dl_src=haddr_to_bin(src), dl_dst=haddr_to_bin(dst))
+
+        mod = datapath.ofproto_parser.OFPFlowMod(
+            datapath=datapath, match=match, cookie=0,
+            command=ofproto.OFPFC_ADD, idle_timeout=60, hard_timeout=0,
+            priority=ofproto.OFP_DEFAULT_PRIORITY,
+            flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
         datapath.send_msg(mod)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
@@ -73,6 +88,15 @@ class SecureSwitch(app_manager.RyuApp):
         self.mac_to_port.setdefault(dpid, {})
 
         self.logger.info("packet in %s %s %s %s", dpid, src, dst, msg.in_port)
+
+        authorize_req = eap_events.AuthorizeRequest(ev.msg)
+        is_authorized = self.send_request(authorize_req).result
+        if is_authorized:
+            self.logger.info("Access allowed: %s -> %s", src, dst)
+        else:
+            self.logger.info("Access denied: %s -> %s", src, dst)
+            self._install_ephemeral_drop_flow(datapath, src, dst)
+            return
 
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = msg.in_port

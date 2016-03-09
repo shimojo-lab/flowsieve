@@ -21,6 +21,8 @@ class UserStore(object):
         return self.users.get(user_name)
 
     def authorize_access(self, user1, user2):
+        if user1 is None or user2 is None:
+            return False
         if user1.role not in self.roles:
             return False
         if user2.role not in self.roles:

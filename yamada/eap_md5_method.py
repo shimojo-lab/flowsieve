@@ -8,6 +8,7 @@ import struct
 
 from ryu.base import app_manager
 from ryu.controller.handler import set_ev_cls
+from ryu.lib.mac import BROADCAST_STR
 from ryu.lib.packet import ethernet, packet
 
 from transitions import Machine
@@ -108,7 +109,8 @@ class EAPMD5Method(app_manager.RyuApp):
             return
 
         ctx.logoff()
-        del self._mac_to_contexts[ctx.host_mac]
+        if ctx.host_mac in self._mac_to_contexts:
+            del self._mac_to_contexts[ctx.host_mac]
 
         self.send_event_to_observers(
             eap_events.EventPortLoggedOff(ev.dpid, ev.port)
@@ -197,3 +199,21 @@ class EAPMD5Method(app_manager.RyuApp):
         user_name = self._mac_to_contexts[mac].identity
 
         return self._user_store.get_user(user_name)
+
+    @set_ev_cls(eap_events.AuthorizeRequest)
+    def _authorize_request_handler(self, req):
+        pkt = packet.Packet(req.msg.data)
+        eth = pkt.get_protocol(ethernet.ethernet)
+        src = eth.src
+        dst = eth.dst
+
+        src_user = self._get_user_by_mac(src)
+        dst_user = self._get_user_by_mac(dst)
+
+        result = self._user_store.authorize_access(src_user, dst_user)
+
+        if dst == BROADCAST_STR:
+            result = True
+
+        reply = eap_events.AuthorizeReply(req.dst, result)
+        self.reply_to_request(req, reply)
