@@ -71,5 +71,10 @@ target/
 # pyenv
 .python-version
 
+
+### Direnv ###
 .direnv/
 
+
+### Vagrant ###
+.vagrant/
