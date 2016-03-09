@@ -4,26 +4,30 @@ Yamada 802.1X Authenticator
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event, dpset
-from ryu.controller.handler import MAIN_DISPATCHER, DEAD_DISPATCHER
+from ryu.controller.handler import MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_0
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 
-from yamada import eap, eapol, eap_md5_sm, simple_switch
+from yamada import eap, eapol, eap_md5_method, eap_events, simple_switch
 
 
 class Authenticator(app_manager.RyuApp):
     """802.1X Authenticator Application
     """
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
-    _EVENTS = [eap_md5_sm.EventStartEAP, eap_md5_sm.EventStartEAPMD5Challenge,
-               eap_md5_sm.EventFinishEAPMD5Challenge]
+    _EVENTS = [eap_events.EventStartEAPOL, eap_events.EventLogoffEAPOL,
+               eap_events.EventStartEAPMD5Challenge,
+               eap_events.EventFinishEAPMD5Challenge]
     _CONTEXTS = {
-        "eap_md5_sm": eap_md5_sm.EAPMD5StateMachine,
+        "dpset": dpset.DPSet,
         "simple_switch": simple_switch.SimpleSwitch,
-        "dpset": dpset.DPSet
+        "eap_md5_method": eap_md5_method.EAPMD5Method,
     }
+
+    COOKIE_EAPOL = 1
+    COOKIE_DROP = 2
 
     def __init__(self, *args, **kwargs):
         super(Authenticator, self).__init__(*args, **kwargs)
@@ -39,24 +43,40 @@ class Authenticator(app_manager.RyuApp):
         actions = [ofproto_parser.OFPActionOutput(ofproto.OFPP_CONTROLLER)]
 
         mod = dp.ofproto_parser.OFPFlowMod(
-            datapath=dp, match=match, cookie=0,
+            datapath=dp, match=match, cookie=Authenticator.COOKIE_EAPOL,
             command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
             priority=0xffff,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
         dp.send_msg(mod)
 
-    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER,
-                                                DEAD_DISPATCHER])
+    def _install_drop_flow(self, dp):
+        """Install flow rules to drop all packets
+        """
+        ofproto = dp.ofproto
+        ofproto_parser = dp.ofproto_parser
+
+        for port in self._dps.get_ports(dp.id):
+            if dp.id == int(port.hw_addr.replace(":", ""), 16):
+                # This is an internal port
+                continue
+
+            match = ofproto_parser.OFPMatch(in_port=port.port_no)
+            mod = dp.ofproto_parser.OFPFlowMod(
+                datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
+                command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
+                priority=0x0000,
+                flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
+            dp.send_msg(mod)
+
+    @set_ev_cls(ofp_event.EventOFPStateChange, MAIN_DISPATCHER)
     def _state_change_handler(self, ev):
         dp = ev.datapath
-        if ev.state == MAIN_DISPATCHER:
-            if dp.id is None:
-                return
-            self.logger.info("Datapath %016x connected", dp.id)
-            self._install_eapol_flow(dp)
-        elif ev.state == DEAD_DISPATCHER:
-            if dp.id is None:
-                return
+        if dp.id is None:
+            return
+
+        self.logger.info("Datapath %016x connected", dp.id)
+        self._install_eapol_flow(dp)
+        self._install_drop_flow(dp)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
@@ -73,37 +93,40 @@ class Authenticator(app_manager.RyuApp):
         dst = eth.dst
         src = eth.src
 
-        print pkt
-
         eapol_msg = pkt.get_protocol(eapol.eapol)
 
         sm_ev = None
 
-        # We received a EAPoL start frame
+        # We received an EAPoL start frame
         if eapol_msg.type_ == eapol.EAPOL_TYPE_START:
-            sm_ev = eap_md5_sm.EventStartEAP(dpid, src, dst, msg.in_port)
+            sm_ev = eap_events.EventStartEAPOL(dpid, src, dst, msg.in_port)
 
-        # We received a EAPoL EAP frame
+        # We received an EAPoL logoff frame
+        if eapol_msg.type_ == eapol.EAPOL_TYPE_LOGOFF:
+            sm_ev = eap_events.EventLogoffEAPOL(dpid, msg.in_port)
+
+        # We received an EAPoL EAP frame
         elif eapol_msg.type_ == eapol.EAPOL_TYPE_EAP:
             eap_msg = pkt.get_protocol(eap.eap)
-            # This is a EAP Response packet
+
+            # This is an EAP Response packet
             if eap_msg.code == eap.EAP_CODE_RESPONSE:
 
                 # This is a EAP Identify Response
                 if eap_msg.type_ == eap.EAP_TYPE_IDENTIFY:
-                    sm_ev = eap_md5_sm.EventStartEAPMD5Challenge(
+                    sm_ev = eap_events.EventStartEAPMD5Challenge(
                             dpid, msg.in_port, eap_msg.data.identity)
 
-                # This is a EAP MD5 Challenge Response
+                # This is an EAP MD5 Challenge Response
                 elif eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
-                    sm_ev = eap_md5_sm.EventFinishEAPMD5Challenge(
+                    sm_ev = eap_events.EventFinishEAPMD5Challenge(
                             dpid, msg.in_port, eap_msg.data.challenge,
                             eap_msg.identifier)
 
         if sm_ev is not None:
             self.send_event_to_observers(sm_ev)
 
-    @set_ev_cls(eap_md5_sm.EventOutputEAPOL)
+    @set_ev_cls(eap_events.EventOutputEAPOL)
     def _event_output_eapol_handler(self, ev):
         """Output EAPoL frame from a specified datapath & port
         """
@@ -129,3 +152,17 @@ class Authenticator(app_manager.RyuApp):
             buffer_id=ofproto.OFP_NO_BUFFER,
             data=ev.pkt.data)
         dp.send_msg(out)
+
+    @set_ev_cls(eap_events.EventPortAuthorized)
+    def _event_port_authorized_handler(self, ev):
+        dp = self._dps.get(ev.dpid)
+        if dp is None:
+            return
+        ofproto_parser = dp.ofproto_parser
+        ofproto = dp.ofproto
+
+        match = ofproto_parser.OFPMatch(in_port=ev.port)
+        mod = dp.ofproto_parser.OFPFlowMod(
+            datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
+            command=ofproto.OFPFC_DELETE)
+        dp.send_msg(mod)
