@@ -7,7 +7,7 @@ from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 
 from mininet.cli import CLI
-from mininet.log import info, setLogLevel
+from mininet.log import setLogLevel
 from mininet.net import Mininet
 from mininet.node import Host, RemoteController
 from mininet.topo import SingleSwitchTopo
@@ -21,7 +21,7 @@ def prettify(elem):
     return reparsed.toprettyxml(indent="  ")
 
 
-def generateXSupplicantConf(host):
+def generate_xsupplicant_conf(host):
     top = Element("XsupplicantConfig",
                   {"version": "1.0",
                    "generated_data": "1/20/07"})
@@ -34,61 +34,60 @@ def generateXSupplicantConf(host):
     mac.text = host.MAC(host.name + "-eth0").replace(":", "-")
     wireless = SubElement(interface, "Wireless")
     wireless.text = "no"
-    print prettify(top)
-    host.cmd("echo " + "\'" + prettify(top) + "\'"
-             + " > /etc/xsupplicant.conf")
+    host.cmd("echo " + "\"" + prettify(top) + "\"" +
+             " > /etc/xsupplicant.conf")
 
-def generateXSupplicantUserConf(host):
+
+def generate_xsupplicant_user_conf(host):
     top = Element("XsupplicantConfig",
                   {"version": "1.0",
                    "generated_data": "1/20/07"})
     connections = SubElement(top, "Connections")
     connection = SubElement(connections, "Connection")
-    connectionName = SubElement(connection, "Name")
-    connectionName.text = "test"
-    connectionProfile = SubElement(connection, "Profile")
-    connectionProfile.text = "test"
-    connectionItf = SubElement(connection, "Interface")
-    connectionItf.text = host.name + "-eth0"
+    connection_name = SubElement(connection, "Name")
+    connection_name.text = "test"
+    connection_profile = SubElement(connection, "Profile")
+    connection_profile.text = "test"
+    connection_itf = SubElement(connection, "Interface")
+    connection_itf.text = host.name + "-eth0"
 
     profiles = SubElement(top, "Profiles")
     profile = SubElement(profiles, "Profile")
-    profileName = SubElement(profile, "Name")
-    profileName.text = "test"
-    profileIdentity = SubElement(profile, "Identity")
-    profileIdentity.text = "TIS"
-    profileEAP = SubElement(profile, "EAP")
-    eapType = SubElement(profileEAP, "Type")
-    eapType.text = "MD5"
-    eapPasswd = SubElement(profileEAP, "Password")
-    eapPasswd.text = "TIS"
+    profile_name = SubElement(profile, "Name")
+    profile_name.text = "test"
+    profile_identity = SubElement(profile, "Identity")
+    profile_identity.text = "TIS"
+    profile_eap = SubElement(profile, "EAP")
+    eap_type = SubElement(profile_eap, "Type")
+    eap_type.text = "MD5"
+    eap_passwd = SubElement(profile_eap, "Password")
+    eap_passwd.text = "TIS"
 
-    print prettify(top)
-    host.cmd("echo " + "\'" + prettify(top) + "\'"
-             + " > /etc/xsupplicant.user.conf ")
+    host.cmd("echo " + "\"" + prettify(top) + "\"" +
+             " > /etc/xsupplicant.user.conf ")
 
-def launchNetwork():
+
+def launch_network():
     "Create and test a simple network"
     topo = SingleSwitchTopo(4)
-    privateDirs = ["/tmp", "/etc", ("/var/log", "/tmp/%(name)s/var/log"),
-                   "/var/run", "/var/mn"]
-    host = partial(Host, privateDirs=privateDirs)
+    private_dirs = ["/tmp", "/etc", ("/var/log", "/tmp/%(name)s/var/log"),
+                    "/var/run"]
+    host = partial(Host, privateDirs=private_dirs)
     net = Mininet(topo=topo, host=host, controller=RemoteController)
     net.start()
-    directories = [directory[0] if isinstance(directory, tuple)
-                   else directory for directory in privateDirs]
-    info('Private Directories:', directories, '\n')
 
     for host in net.hosts:
-        generateXSupplicantConf(host)
-        generateXSupplicantUserConf(host)
+        generate_xsupplicant_conf(host)
+        generate_xsupplicant_user_conf(host)
 
     for host in net.hosts:
         host.cmd("xsupplicant")
 
     print "Dumping host connections"
     dumpNodeConnections(net.hosts)
+
     CLI(net)
+
     for host in net.hosts:
         host.cmd("kill %" + "xsupplicant")
     net.stop()
@@ -96,4 +95,4 @@ def launchNetwork():
 
 if __name__ == "__main__":
     setLogLevel("info")
-    launchNetwork()
+    launch_network()
