@@ -59,3 +59,12 @@ class EventPortAuthorized(EventBase):
         super(EventPortAuthorized, self).__init__()
         self.dpid = dpid
         self.port = port
+
+
+class EventPortLoggedOff(EventBase):
+    """Port logged off
+    """
+    def __init__(self, dpid, port):
+        super(EventPortLoggedOff, self).__init__()
+        self.dpid = dpid
+        self.port = port
