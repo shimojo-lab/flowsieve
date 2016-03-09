@@ -2,16 +2,17 @@
 State machine for EAP-MD5 authentication flow
 """
 
-import struct
-import md5
 import logging
+import md5
+import struct
 
 from ryu.base import app_manager
 from ryu.controller.handler import set_ev_cls
-from ryu.lib.packet import packet, ethernet
+from ryu.lib.packet import ethernet, packet
+
 from transitions import Machine
 
-from yamada import eap, eapol, eap_events, user_store
+from yamada import eap, eap_events, eapol, user_store
 
 
 class EAPMD5Context(object):

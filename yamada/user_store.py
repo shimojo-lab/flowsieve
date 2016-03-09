@@ -1,6 +1,6 @@
 import logging
 
-from yaml import load, YAMLError
+from yaml import YAMLError, load
 
 
 class UserStore(object):

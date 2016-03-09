@@ -3,14 +3,14 @@ Yamada 802.1X Authenticator
 """
 
 from ryu.base import app_manager
-from ryu.controller import ofp_event, dpset
+from ryu.controller import dpset, ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
-from ryu.ofproto import ofproto_v1_0
-from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
+from ryu.lib.packet import packet
+from ryu.ofproto import ofproto_v1_0
 
-from yamada import eap, eapol, eap_md5_method, eap_events, simple_switch
+from yamada import eap, eap_events, eap_md5_method, eapol, simple_switch
 
 
 class Authenticator(app_manager.RyuApp):
@@ -115,13 +115,13 @@ class Authenticator(app_manager.RyuApp):
                 # This is a EAP Identify Response
                 if eap_msg.type_ == eap.EAP_TYPE_IDENTIFY:
                     sm_ev = eap_events.EventStartEAPMD5Challenge(
-                            dpid, msg.in_port, eap_msg.data.identity)
+                        dpid, msg.in_port, eap_msg.data.identity)
 
                 # This is an EAP MD5 Challenge Response
                 elif eap_msg.type_ == eap.EAP_TYPE_MD5_CHALLENGE:
                     sm_ev = eap_events.EventFinishEAPMD5Challenge(
-                            dpid, msg.in_port, eap_msg.data.challenge,
-                            eap_msg.identifier)
+                        dpid, msg.in_port, eap_msg.data.challenge,
+                        eap_msg.identifier)
 
         if sm_ev is not None:
             self.send_event_to_observers(sm_ev)
