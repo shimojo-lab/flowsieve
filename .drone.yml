@@ -4,3 +4,8 @@ build:
     - pip install -r requirements.txt
     - flake8 --exclude=.direnv .
     - nosetests -v
+  environment:
+    - PIP_DOWNLOAD_CACHE=/drone/pip_download_cache
+cache:
+  mount:
+    - /drone/pip_download_cache
