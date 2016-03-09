@@ -70,7 +70,7 @@ def generateXSupplicantUserConf(host):
 def launchNetwork():
     "Create and test a simple network"
     topo = SingleSwitchTopo(4)
-    privateDirs = ["tmp", "/etc", ("/var/log", "/tmp/%(name)s/var/log"),
+    privateDirs = ["/tmp", "/etc", ("/var/log", "/tmp/%(name)s/var/log"),
                    "/var/run", "/var/mn"]
     host = partial(Host, privateDirs=privateDirs)
     net = Mininet(topo=topo, host=host, controller=RemoteController)
