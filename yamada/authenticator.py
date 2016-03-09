@@ -74,7 +74,7 @@ class Authenticator(app_manager.RyuApp):
         ofproto = dp.ofproto
         ofproto_parser = dp.ofproto_parser
 
-        match = ofproto_parser.OFPMatch(inport=port_no)
+        match = ofproto_parser.OFPMatch(in_port=port_no)
         mod = dp.ofproto_parser.OFPFlowMod(
             datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
             command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
