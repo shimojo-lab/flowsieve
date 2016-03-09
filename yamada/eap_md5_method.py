@@ -21,16 +21,16 @@ class EAPMD5Context(object):
 
     _STATES = ["idle", "ident", "challenge", "authenticated"]
 
-    def __init__(self, dpid, port, src, dst):
+    def __init__(self, dpid, port, host_mac, sw_mac):
         super(EAPMD5Context, self).__init__()
         # The datapath we're working on
         self.dpid = dpid
         # The port number we're working on
         self.port = port
         # Supplicant MAC address
-        self.src = src
+        self.host_mac = host_mac
         # Authenticator MAC address (likely to be a multicast address)
-        self.dst = dst
+        self.sw_mac = sw_mac
         # MD5 challenge value
         self.challenge = ""
         # Identity
@@ -54,7 +54,7 @@ class EAPMD5Context(object):
 
     def on_enter_authenticated(self):
         self._logger.info("Authenticated user %s (%s) at port %d of"
-                          " switch %016x", self.identity, self.src,
+                          " switch %016x", self.identity, self.host_mac,
                           self.port, self.dpid)
 
 
@@ -84,7 +84,7 @@ class EAPMD5Method(app_manager.RyuApp):
         ctx.start_ident()
 
         resp = packet.Packet()
-        resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
+        resp.add_protocol(ethernet.ethernet(src=ctx.sw_mac, dst=ctx.host_mac,
                                             ethertype=eapol.ETH_TYPE_EAPOL))
         resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
         resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
@@ -122,7 +122,7 @@ class EAPMD5Method(app_manager.RyuApp):
         ctx.start_challenge(ev.identity, c.challenge)
 
         resp = packet.Packet()
-        resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
+        resp.add_protocol(ethernet.ethernet(src=ctx.sw_mac, dst=ctx.host_mac,
                                             ethertype=eapol.ETH_TYPE_EAPOL))
         resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
         resp.add_protocol(eap.eap(code=eap.EAP_CODE_REQUEST,
@@ -162,7 +162,7 @@ class EAPMD5Method(app_manager.RyuApp):
             ctx.logoff()
 
         resp = packet.Packet()
-        resp.add_protocol(ethernet.ethernet(src=ctx.dst, dst=ctx.src,
+        resp.add_protocol(ethernet.ethernet(src=ctx.sw_mac, dst=ctx.host_mac,
                                             ethertype=eapol.ETH_TYPE_EAPOL))
         resp.add_protocol(eapol.eapol(type_=eapol.EAPOL_TYPE_EAP))
         resp.add_protocol(eap.eap(identifier=ev.identifier,
