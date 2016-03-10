@@ -80,11 +80,9 @@ class UserStore(object):
                 continue
 
             name = role["name"]
-
-            is_public = role.get("public", False)
-            is_family = role.get("family", False)
-            allowed_users = role.get("allowed_users")
-            acl = ACL(is_public, is_family, allowed_users)
+            acl = ACL(allowed_users=role.get("allowed_users"),
+                      is_public=role.get("public", False),
+                      is_family=role.get("family", False))
 
             r = Role(name, acl)
             if name in self.roles:
@@ -133,12 +131,8 @@ class User(object):
 
 
 class ACL(object):
-    # TODO Use kwargs for options
-    def __init__(self, is_public=False, is_family=False, allowed_users=None):
+    def __init__(self, **kwargs):
         super(ACL, self).__init__()
-        self.is_family = is_family
-        self.is_public = is_public
-        if allowed_users is None:
-            self.allowed_users = []
-        else:
-            self.allowed_users = allowed_users
+        self.allowed_users = kwargs.get("allowed_users", [])
+        self.is_family = kwargs.get("is_family", False)
+        self.is_public = kwargs.get("is_public", False)
