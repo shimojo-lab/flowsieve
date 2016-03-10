@@ -34,8 +34,8 @@ class UserStore(object):
                 return True
 
         # Check for both directions
-        check1 = user2.name in user1.role.acl.allowed_users
-        check2 = user1.name in user2.role.acl.allowed_users
+        check1 = user2 in user1.role.acl.allowed_users
+        check2 = user1 in user2.role.acl.allowed_users
 
         return check1 and check2
 
@@ -80,7 +80,7 @@ class UserStore(object):
                 continue
 
             name = role["name"]
-            acl = ACL(allowed_users=role.get("allowed_users"),
+            acl = ACL(allowed_users=role.get("allowed_users", []),
                       is_public=role.get("public", False),
                       is_family=role.get("family", False))
 
@@ -107,6 +107,17 @@ class UserStore(object):
 
             user.role = role
 
+        for role in self.roles.values():
+            for user_name in role.acl.allowed_user_names:
+                user = self.users.get(user_name)
+                if user is None:
+                    self._logger.warning("Unknwon user %s in section"
+                                         " allowed_users of role %s",
+                                         user_name, role.name)
+                    continue
+
+                role.acl.allowed_users.append(user)
+
 
 class Role(object):
     def __init__(self, name, acl):
@@ -119,12 +130,12 @@ class Role(object):
 
 
 class User(object):
-    def __init__(self, name, password, role_name, role=None):
+    def __init__(self, name, password, role_name):
         super(User, self).__init__()
         self.name = name
         self.password = password
         self.role_name = role_name
-        self.role = role
+        self.role = None
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
@@ -133,6 +144,7 @@ class User(object):
 class ACL(object):
     def __init__(self, **kwargs):
         super(ACL, self).__init__()
-        self.allowed_users = kwargs.get("allowed_users", [])
+        self.allowed_user_names = kwargs.get("allowed_users", [])
+        self.allowed_users = []
         self.is_family = kwargs.get("is_family", False)
         self.is_public = kwargs.get("is_public", False)
