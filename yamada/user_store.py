@@ -23,6 +23,12 @@ class UserStore(object):
     def get_role(self, role_name):
         return self.roles.get(role_name)
 
+    def del_user(self, user_name):
+        del self.users[user_name]
+
+    def del_role(self, role_name):
+        del self.roles[role_name]
+
     def _read_definition_file(self):
         try:
             data = load(file(self.user_role_file))
@@ -72,24 +78,10 @@ class UserStore(object):
     def _load_relations(self):
         """Load relations between models"""
         for user in self.users.values():
-            role = self.roles.get(user.role_name)
-            if role is None:
-                self._logger.warning("Unknown role %s for user %s",
-                                     user.role_name, user.name)
-                del self.users[user.name]
-
-            user.role = role
+            user.load_relations(self)
 
         for role in self.roles.values():
-            for user_name in role.acl.allowed_user_names:
-                user = self.users.get(user_name)
-                if user is None:
-                    self._logger.warning("Unknwon user %s in section"
-                                         " allowed_users of role %s",
-                                         user_name, role.name)
-                    continue
-
-                role.acl.allowed_users.append(user)
+            role.load_relations(self)
 
 
 class Role(object):
@@ -97,9 +89,21 @@ class Role(object):
         super(Role, self).__init__()
         self.name = name
         self.acl = acl
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
+
+    def load_relations(self, user_store):
+        for user_name in self.acl.allowed_user_names:
+            user = user_store.get_user(user_name)
+            if user is None:
+                self._logger.warning("Unknwon user %s in section"
+                                     " allowed_users of role %s",
+                                     user_name, self.name)
+                continue
+
+            self.acl.allowed_users.append(user)
 
     @classmethod
     def _validate_role_keys(cls, item):
@@ -126,6 +130,7 @@ class User(object):
         self.password = password
         self.role_name = role_name
         self.role = None
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
@@ -147,6 +152,15 @@ class User(object):
         check2 = other in self.role.acl.allowed_users
 
         return check1 and check2
+
+    def load_relations(self, user_store):
+        role = user_store.get_role(self.role_name)
+        if role is None:
+            self._logger.warning("Unknown role %s for user %s",
+                                 self.role_name, self.name)
+            user_store.del_user(self.name)
+
+        self.role = role
 
     @classmethod
     def _validate_user_keys(cls, item):
