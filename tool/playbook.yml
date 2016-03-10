@@ -9,6 +9,8 @@
     direnv_sha: 8b9fc5362e8f4d338f73fe022026423ffbf72c316a6ef8447629e08a1488422d
     mnexec_url: https://raw.githubusercontent.com/mininet/mininet/96ea5367dbea7b77e6b7454c1de85b30b7ba7035/mnexec.c
     mnexec_sha: 4377b573054f75707f37d8c2b8d7d8a7f12647e7b6eeaaeca529129001606251
+    direnv_allow_hash: 5945516c60bc0e77173b9dd717a8c6cbc31dc98d0b6a087e35a640e6b73da9e9
+    direnv_allow_file: "{{ home_dir }}/.config/direnv/allow/{{ direnv_allow_hash }}"
 
   tasks:
 
@@ -50,7 +52,7 @@
     - name: Install virtualenv
       pip: name=virtualenv
     - name: Execute direnv allow on project directory
-      shell: direnv allow chdir=/vagrant
+      shell: direnv allow chdir=/vagrant creates={{ direnv_allow_file }}
       become: no
     - name: Install pip dependencies
       pip: chdir=/vagrant requirements=/vagrant/requirements.txt state=latest
