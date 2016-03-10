@@ -49,6 +49,12 @@
             mode=0644
     - name: Install virtualenv
       pip: name=virtualenv
+    - name: Execute direnv allow on project directory
+      shell: direnv allow chdir=/vagrant
+      become: no
+    - name: Install pip dependencies
+      pip: chdir=/vagrant requirements=/vagrant/requirements.txt state=latest
+      become: no
 
     - name: Install apt packages for xsupplicant
       apt: name={{ item }} state=latest
