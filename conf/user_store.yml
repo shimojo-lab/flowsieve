@@ -3,7 +3,6 @@ roles:
     allowed_users:
       - Development Server
       - Test Server
-      - Test Server
     family: true
   - name: Marketing
     allowed_users:

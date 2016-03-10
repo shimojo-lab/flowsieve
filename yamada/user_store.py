@@ -61,7 +61,17 @@ class UserStore(object):
                 continue
 
             name = role["name"]
-            acl = ACL(allowed_users=role.get("allowed_users", []),
+            allowed_users = []
+            for allowed_user in role.get("allowed_users", []):
+                if allowed_user in allowed_users:
+                    self._logger.warning("Duplicate user %s in section"
+                                         " allowed_users of role %s",
+                                         allowed_user, name)
+                    continue
+
+                allowed_users.append(allowed_user)
+
+            acl = ACL(allowed_users=allowed_users,
                       is_public=role.get("public", False),
                       is_family=role.get("family", False))
 
