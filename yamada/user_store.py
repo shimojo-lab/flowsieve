@@ -20,6 +20,9 @@ class UserStore(object):
     def get_user(self, user_name):
         return self.users.get(user_name)
 
+    def get_role(self, role_name):
+        return self.roles.get(role_name)
+
     def _read_definition_file(self):
         try:
             data = load(file(self.user_role_file))
