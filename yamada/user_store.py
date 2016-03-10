@@ -29,7 +29,7 @@ class UserStore(object):
             return True
 
         # Allow intra-role communication if role is a family
-        if user1.role.name == user2.role.name:
+        if user1.role == user2.role:
             if user1.role.acl.is_family:
                 return True
 
@@ -116,6 +116,9 @@ class Role(object):
         self.name = name
         self.acl = acl
 
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.name == other.name
+
 
 class User(object):
     def __init__(self, name, password, role_name, role=None):
@@ -124,6 +127,9 @@ class User(object):
         self.password = password
         self.role_name = role_name
         self.role = role
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.name == other.name
 
 
 class ACL(object):
