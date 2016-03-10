@@ -1,6 +1,6 @@
 #!/bin/sh
 
-RYU_OPTS=""
+RYU_OPTS="--log-config-file=./tool/log.ini"
 
 while getopts d OPT
 do
