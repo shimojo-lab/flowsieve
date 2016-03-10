@@ -108,11 +108,7 @@ class Role(object):
             return None
 
         name = item["name"]
-        allowed_users = item.get("allowed_users", [])
-
-        acl = ACL(allowed_users=allowed_users,
-                  is_public=item.get("public", False),
-                  is_family=item.get("family", False))
+        acl = ACL.from_dict(item)
 
         return Role(name, acl)
 
@@ -169,3 +165,11 @@ class ACL(object):
         self.allowed_users = []
         self.is_family = kwargs.get("is_family", False)
         self.is_public = kwargs.get("is_public", False)
+
+    @classmethod
+    def from_dict(cls, item):
+        acl = ACL(allowed_users=item.get("allowed_users", []),
+                  is_public=item.get("public", False),
+                  is_family=item.get("family", False))
+
+        return acl
