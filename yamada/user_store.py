@@ -135,6 +135,10 @@ class User(object):
         if other is None:
             return False
 
+        # Allow access between same user
+        if self == other:
+            return True
+
         # If any of the two is public, grant access
         if self.role.acl.is_public or other.role.acl.is_public:
             return True
