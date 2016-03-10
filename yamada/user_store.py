@@ -115,6 +115,9 @@ class Role(object):
 
         return Role(name, acl)
 
+    def __repr__(self):
+        return "<Role name=\"{0}\">".format(self.name)
+
 
 class User(object):
     def __init__(self, name, password, role_name):
@@ -159,6 +162,11 @@ class User(object):
         role_name = item["role"]
 
         return User(name, password, role_name)
+
+    def __repr__(self):
+        return "<User name=\"{0}\" role=\"{1}\">".format(
+            self.name, self.role_name
+        )
 
 
 class ACL(object):
