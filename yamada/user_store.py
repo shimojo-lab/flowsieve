@@ -23,26 +23,19 @@ class UserStore(object):
     def authorize_access(self, user1, user2):
         if user1 is None or user2 is None:
             return False
-        if user1.role not in self.roles:
-            return False
-        if user2.role not in self.roles:
-            return False
-
-        role1 = self.roles[user1.role]
-        role2 = self.roles[user2.role]
 
         # If any of the two is public, grant access
-        if role1.acl.is_public or role2.acl.is_public:
+        if user1.role.acl.is_public or user2.role.acl.is_public:
             return True
 
         # Allow intra-role communication if role is a family
-        if user1.role == user2.role:
-            if role1.acl.is_family:
+        if user1.role.name == user2.role.name:
+            if user1.role.acl.is_family:
                 return True
 
         # Check for both directions
-        check1 = user2.name in role1.acl.allowed_users
-        check2 = user1.name in role2.acl.allowed_users
+        check1 = user2.name in user1.role.acl.allowed_users
+        check2 = user1.name in user2.role.acl.allowed_users
 
         return check1 and check2
 
@@ -64,7 +57,7 @@ class UserStore(object):
             self._logger.info("Reading user data")
             self._store_user_data(data["users"])
 
-        self._check_inconsistency()
+        self._load_relations()
 
     def _store_user_data(self, users):
         for user in users:
@@ -73,8 +66,8 @@ class UserStore(object):
 
             name = user["name"]
             password = user["password"]
-            role = user["role"]
-            u = User(name, password, role)
+            role_name = user["role"]
+            u = User(name, password, role_name)
 
             if name in self.users:
                 self._logger.warning("Duplicate user name %s", name)
@@ -99,15 +92,22 @@ class UserStore(object):
                 continue
             self.roles[name] = r
 
-    def _check_inconsistency(self):
-        # TODO Check incosistency in models and relations.
-        pass
-
     def _validate_user_keys(self, user):
         return "name" in user and "password" in user and "role" in user
 
     def _validate_role_keys(self, role):
         return "name" in role
+
+    def _load_relations(self):
+        """Load relations between models"""
+        for user in self.users.values():
+            role = self.roles.get(user.role_name)
+            if role is None:
+                self._logger.warning("Unknown role %s for user %s",
+                                     user.role_name, user.name)
+                del self.users[user.name]
+
+            user.role = role
 
 
 class Role(object):
@@ -118,10 +118,11 @@ class Role(object):
 
 
 class User(object):
-    def __init__(self, name, password, role):
+    def __init__(self, name, password, role_name, role=None):
         super(User, self).__init__()
         self.name = name
         self.password = password
+        self.role_name = role_name
         self.role = role
 
 
