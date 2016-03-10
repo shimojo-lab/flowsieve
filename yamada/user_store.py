@@ -168,8 +168,4 @@ class ACL(object):
 
     @classmethod
     def from_dict(cls, item):
-        acl = ACL(allowed_users=item.get("allowed_users", []),
-                  is_public=item.get("public", False),
-                  is_family=item.get("family", False))
-
-        return acl
+        return ACL(**item)
