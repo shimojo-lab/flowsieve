@@ -27,3 +27,6 @@ users:
   - name: Test Server
     password: TIS
     role: Server
+  - name: Marketing File Server
+    password: TIS
+    role: Server
