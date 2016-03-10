@@ -69,7 +69,7 @@ def generate_xsupplicant_user_conf(host):
 def launch_network():
     "Create and test a simple network"
     topo = SingleSwitchTopo(4)
-    private_dirs = ["/tmp", "/etc", ("/var/log", "/tmp/%(name)s/var/log"),
+    private_dirs = ["/tmp", "/etc", ("/var/log", "/var/%(name)s/log"),
                     "/var/run"]
     host = partial(Host, privateDirs=private_dirs)
     net = Mininet(topo=topo, host=host, controller=RemoteController)
@@ -88,7 +88,7 @@ def launch_network():
     CLI(net)
 
     for host in net.hosts:
-        host.cmd("kill %" + "xsupplicant")
+        host.cmd("killall xsupplicant")
     net.stop()
 
 
