@@ -34,7 +34,7 @@ def generate_xsupplicant_conf(host):
     mac.text = host.MAC(host.name + "-eth0").replace(":", "-")
     wireless = SubElement(interface, "Wireless")
     wireless.text = "no"
-    host.cmd("echo " + "\"" + prettify(top) + "\"" +
+    host.cmd("echo " + "\'" + prettify(top) + "\'" +
              " > /etc/xsupplicant.conf")
 
 
@@ -63,7 +63,7 @@ def generate_xsupplicant_user_conf(host):
     eap_passwd = SubElement(profile_eap, "Password")
     eap_passwd.text = "TIS"
 
-    host.cmd("echo " + "\"" + prettify(top) + "\"" +
+    host.cmd("echo " + "\'" + prettify(top) + "\'" +
              " > /etc/xsupplicant.user.conf ")
 
 
