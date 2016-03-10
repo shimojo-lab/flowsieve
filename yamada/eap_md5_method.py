@@ -210,7 +210,10 @@ class EAPMD5Method(app_manager.RyuApp):
         src_user = self._get_user_by_mac(src)
         dst_user = self._get_user_by_mac(dst)
 
-        result = self._user_store.authorize_access(src_user, dst_user)
+        result = False
+
+        if src_user is not None and dst_user is not None:
+            result = src_user.can_access_user(dst_user)
 
         if dst == BROADCAST_STR:
             result = True

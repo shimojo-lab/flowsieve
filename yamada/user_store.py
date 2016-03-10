@@ -20,25 +20,6 @@ class UserStore(object):
     def get_user(self, user_name):
         return self.users.get(user_name)
 
-    def authorize_access(self, user1, user2):
-        if user1 is None or user2 is None:
-            return False
-
-        # If any of the two is public, grant access
-        if user1.role.acl.is_public or user2.role.acl.is_public:
-            return True
-
-        # Allow intra-role communication if role is a family
-        if user1.role == user2.role:
-            if user1.role.acl.is_family:
-                return True
-
-        # Check for both directions
-        check1 = user2 in user1.role.acl.allowed_users
-        check2 = user1 in user2.role.acl.allowed_users
-
-        return check1 and check2
-
     def _read_definition_file(self):
         try:
             data = load(file(self.user_role_file))
@@ -139,6 +120,24 @@ class User(object):
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
+
+    def can_access_user(self, other):
+        if other is None:
+            return False
+
+        # If any of the two is public, grant access
+        if self.role.acl.is_public or other.role.acl.is_public:
+            return True
+
+        # Allow intra-role communication if role is a family
+        if self.role == self.role and self.role.acl.is_family:
+            return True
+
+        # Check for both directions
+        check1 = self in other.role.acl.allowed_users
+        check2 = other in self.role.acl.allowed_users
+
+        return check1 and check2
 
 
 class ACL(object):
