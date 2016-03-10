@@ -3,7 +3,6 @@ roles:
     allowed_users:
       - Development Server
       - Test Server
-      - Test Server
     family: true
   - name: Marketing
     allowed_users:
@@ -25,5 +24,8 @@ users:
     password: TIS
     role: Server
   - name: Test Server
+    password: TIS
+    role: Server
+  - name: Marketing File Server
     password: TIS
     role: Server
