@@ -15,6 +15,8 @@ from mininet.node import Host, RemoteController
 from mininet.topo import SingleSwitchTopo
 from mininet.util import dumpNodeConnections
 
+from yamada.user_store import UserStore
+
 
 def prettify(elem):
     # Return a pretty-printed XML string for the Element.
@@ -30,9 +32,14 @@ def generate_xsupplicant_conf(host):
     if_name = host.name + "-eth0"
     conf = tpl_conf.render({"if_name": if_name,
                             "mac_addr": host.MAC(if_name).replace(":", "-")})
-    host.cmd("echo + "\"" + conf + "\"" + " > /etc/xsupplicant.conf")
+    host.cmd("echo '%s' > /etc/xsupplicant.conf" % conf)
 
 def generate_xsupplicant_user_conf(host):
+    env = Environment(loader=FileSystemLoader("./template_conf"))
+    tpl_user_conf = env.get_template("xsupplicant.tpl.user.conf")
+
+
+
     top = Element("XsupplicantConfig",
                   {"version": "1.0",
                    "generated_data": "1/20/07"})
