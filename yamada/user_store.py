@@ -140,7 +140,7 @@ class User(object):
             return True
 
         # Allow intra-role communication if role is a family
-        if self.role == self.role and self.role.acl.is_family:
+        if self.role == other.role and self.role.acl.is_family:
             return True
 
         # Check for both directions
