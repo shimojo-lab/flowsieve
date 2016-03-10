@@ -30,7 +30,7 @@
         creates=mnexec
       become: no
     - name: Install mnexec
-      command: install -o root -g root -m 0755 mnexec /usr/bin/mnexec
+      command: install -o root -g root -m 0755 mnexec /usr/local/bin/mnexec
         chdir={{ home_dir }}
         creates=/usr/local/bin/mnexec
 
