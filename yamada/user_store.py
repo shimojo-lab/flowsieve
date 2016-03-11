@@ -103,15 +103,7 @@ class Role(object):
         return isinstance(other, self.__class__) and self.name == other.name
 
     def load_relations(self, user_store):
-        for user_name in self.acl.allowed_user_names:
-            user = user_store.get_user(user_name)
-            if user is None:
-                self._logger.warning("Unknwon user %s in section"
-                                     " allowed_users of role %s",
-                                     user_name, self.name)
-                continue
-
-            self.acl.allowed_users.append(user)
+        self.acl.load_relations(user_store)
 
     @classmethod
     def _validate_role_keys(cls, item):
@@ -202,8 +194,19 @@ class ACL(object):
         super(ACL, self).__init__()
         self.allowed_user_names = kwargs.get("allowed_users", [])
         self.allowed_users = []
-        self.is_family = kwargs.get("is_family", False)
-        self.is_public = kwargs.get("is_public", False)
+        self.is_family = kwargs.get("family", False)
+        self.is_public = kwargs.get("public", False)
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+    def load_relations(self, user_store):
+        for user_name in self.allowed_user_names:
+            user = user_store.get_user(user_name)
+            if user is None:
+                self._logger.warning("Unknwon user %s in section"
+                                     " allowed_users of an ACL", user_name)
+                continue
+
+            self.allowed_users.append(user)
 
     @classmethod
     def from_dict(cls, item):
