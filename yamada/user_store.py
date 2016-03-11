@@ -122,7 +122,7 @@ class Role(object):
         return Role(name, acl)
 
     def __repr__(self):
-        return "<Role name=\"{0}\">".format(self.name)
+        return "<Role name=\"{0}\" acl={1}>".format(self.name, self.acl)
 
 
 class User(object):
@@ -213,3 +213,15 @@ class ACL(object):
         assert isinstance(item, dict)
 
         return ACL(**item)
+
+    def __repr__(self):
+        repr_family = ""
+        if self.is_family:
+            repr_family = " family"
+        repr_public = ""
+        if self.is_public:
+            repr_public = " public"
+
+        return "<ACL{0}{1} allowed_users={2}>".format(
+            repr_family, repr_public, self.allowed_user_names
+        )
