@@ -18,15 +18,23 @@ class UserStore(object):
         self._read_definition_file()
 
     def get_user(self, user_name):
+        assert isinstance(user_name, str)
+
         return self.users.get(user_name)
 
     def get_role(self, role_name):
+        assert isinstance(role_name, str)
+
         return self.roles.get(role_name)
 
     def del_user(self, user_name):
+        assert isinstance(user_name, str)
+
         del self.users[user_name]
 
     def del_role(self, role_name):
+        assert isinstance(role_name, str)
+
         del self.roles[role_name]
 
     def _read_definition_file(self):
@@ -111,6 +119,8 @@ class Role(object):
 
     @classmethod
     def from_dict(cls, item):
+        assert isinstance(item, dict)
+
         if not cls._validate_role_keys(item):
             return None
 
@@ -136,6 +146,8 @@ class User(object):
         return isinstance(other, self.__class__) and self.name == other.name
 
     def can_access_user(self, other):
+        assert isinstance(other, User)
+
         if other is None:
             return False
 
@@ -168,6 +180,8 @@ class User(object):
 
     @classmethod
     def from_dict(cls, item):
+        assert isinstance(item, dict)
+
         if not cls._validate_user_keys(item):
             return None
 
@@ -193,4 +207,6 @@ class ACL(object):
 
     @classmethod
     def from_dict(cls, item):
+        assert isinstance(item, dict)
+
         return ACL(**item)
