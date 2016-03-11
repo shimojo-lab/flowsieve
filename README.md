@@ -4,7 +4,11 @@
 
 "ロールベースセキュリティポリシーを持つネットワーク"のためのOpenFlowコントローラ
 
-## Open vSwitch + KVM / 物理OpenFlowスイッチ + 物理サーバ
+## Open vSwitch + KVM or 物理OpenFlowスイッチ + 物理サーバ
+
+実験用ネットワークは仮想マシン/仮想スイッチ、あるいは物理マシン/物理スイッチ
+を用いて手動で構築する。direnv + virtualenvにより物理マシン上に隔離環境をつくり
+、そこでコントローラを起動する。
 
 ### 環境設定
 
@@ -22,12 +26,16 @@
 
 ## Vagrant + mininet
 
+VagrantによりUbuntuのVMを起動し、Ansibleで必要なコンポーネントを一括で
+プロビジョニングする。VM内でmininetを起動し、仮想ネットワークをVM内に自動的に
+構築する。コントローラはVM内で実行する。
+
 ### 環境設定
 
 1. [Vagrant](https://www.vagrantup.com/) と [Ansible](https://www.ansible.com/)
   をインストールする
 2. このリポジトリをcloneし、`tool/` ディレクトリ内に移動する
-3. `vagrant up`
+3. `vagrant up` (Ansibleによるプロビジョニングが実行される)
 4. `vagrant ssh`
 
 ### 実行
