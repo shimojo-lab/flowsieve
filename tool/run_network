@@ -6,6 +6,8 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element, SubElement
 
+from jinja2 import Environment, FileSystemLoader
+
 from mininet.cli import CLI
 from mininet.log import setLogLevel
 from mininet.net import Mininet
@@ -22,21 +24,13 @@ def prettify(elem):
 
 
 def generate_xsupplicant_conf(host):
-    top = Element("XsupplicantConfig",
-                  {"version": "1.0",
-                   "generated_data": "1/20/07"})
-    SubElement(top, "Globals")
-    devices = SubElement(top, "Devices")
-    interface = SubElement(devices, "Interface")
-    description = SubElement(interface, "Description")
-    description.text = host.name + "-eth0"
-    mac = SubElement(interface, "MAC")
-    mac.text = host.MAC(host.name + "-eth0").replace(":", "-")
-    wireless = SubElement(interface, "Wireless")
-    wireless.text = "no"
+    env = Environment(loader=FileSystemLoader("./template_conf/"))
+    tpl_conf = env.get_template("xsupplicant.tpl.conf")
 
-    host.cmd("echo '%s' > /etc/xsupplicant.conf" % prettify(top))
-
+    if_name = host.name + "-eth0"
+    conf = tpl_conf.render({"if_name": if_name,
+                            "mac_addr": host.MAC(if_name).replace(":", "-")})
+    host.cmd("echo + "\"" + conf + "\"" + " > /etc/xsupplicant.conf")
 
 def generate_xsupplicant_user_conf(host):
     top = Element("XsupplicantConfig",
