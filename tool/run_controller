@@ -1,14 +1,14 @@
 #!/bin/sh
 
-RYU_OPTS=""
+LOG_CONFIG_FILE="./conf/log.ini"
 
 while getopts d OPT
 do
   case $OPT in
-    "d" ) RYU_OPTS="${RYU_OPTS} --verbose" ;;
+    "d" ) LOG_CONFIG_FILE="./conf/log_debug.ini" ;;
   esac
 done
 
 cd `dirname $0`/..
-ryu-manager yamada.authenticator $RYU_OPTS
+ryu-manager yamada.authenticator --log-config-file=$LOG_CONFIG_FILE
 
