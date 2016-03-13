@@ -36,6 +36,10 @@ class SecureSwitch(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
     _EVENTS = [eap_events.AuthorizeRequest]
 
+    _COOKIE_SECURE_SWITCH = 0xf100
+    _COOKIE_FORWARD = _COOKIE_SECURE_SWITCH | 0x01
+    _COOKIE_DROP = _COOKIE_SECURE_SWITCH | 0x02
+
     def __init__(self, *args, **kwargs):
         super(SecureSwitch, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
@@ -47,7 +51,8 @@ class SecureSwitch(app_manager.RyuApp):
             in_port=in_port, dl_dst=haddr_to_bin(dst))
 
         mod = datapath.ofproto_parser.OFPFlowMod(
-            datapath=datapath, match=match, cookie=0,
+            datapath=datapath, match=match,
+            cookie=SecureSwitch._COOKIE_FORWARD,
             command=ofproto.OFPFC_ADD, idle_timeout=60, hard_timeout=0,
             priority=ofproto.OFP_DEFAULT_PRIORITY,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
@@ -60,7 +65,8 @@ class SecureSwitch(app_manager.RyuApp):
             dl_src=haddr_to_bin(src), dl_dst=haddr_to_bin(dst))
 
         mod = datapath.ofproto_parser.OFPFlowMod(
-            datapath=datapath, match=match, cookie=0,
+            datapath=datapath, match=match,
+            cookie=SecureSwitch._COOKIE_SECURE_SWITCH,
             command=ofproto.OFPFC_ADD, idle_timeout=60, hard_timeout=0,
             priority=ofproto.OFP_DEFAULT_PRIORITY,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])

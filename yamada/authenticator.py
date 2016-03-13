@@ -26,8 +26,9 @@ class Authenticator(app_manager.RyuApp):
         "eap_md5_method": eap_md5_method.EAPMD5Method,
     }
 
-    COOKIE_EAPOL = 1
-    COOKIE_DROP = 2
+    _COOKIE_AUTHENTICATOR = 0xf000
+    _COOKIE_EAPOL = _COOKIE_AUTHENTICATOR | 0x01
+    _COOKIE_DROP = _COOKIE_AUTHENTICATOR | 0x02
 
     def __init__(self, *args, **kwargs):
         super(Authenticator, self).__init__(*args, **kwargs)
@@ -43,7 +44,7 @@ class Authenticator(app_manager.RyuApp):
         actions = [ofproto_parser.OFPActionOutput(ofproto.OFPP_CONTROLLER)]
 
         mod = dp.ofproto_parser.OFPFlowMod(
-            datapath=dp, match=match, cookie=Authenticator.COOKIE_EAPOL,
+            datapath=dp, match=match, cookie=Authenticator._COOKIE_EAPOL,
             command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
             priority=0xffff,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
@@ -67,7 +68,7 @@ class Authenticator(app_manager.RyuApp):
 
         match = ofproto_parser.OFPMatch(in_port=port_no)
         mod = dp.ofproto_parser.OFPFlowMod(
-            datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
+            datapath=dp, match=match, cookie=Authenticator._COOKIE_DROP,
             command=ofproto.OFPFC_ADD, idle_timeout=0, hard_timeout=0,
             priority=0x0000,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
@@ -81,13 +82,13 @@ class Authenticator(app_manager.RyuApp):
 
         match_inport = ofproto_parser.OFPMatch(in_port=port_no)
         mod_inport = dp.ofproto_parser.OFPFlowMod(
-            datapath=dp, match=match_inport, cookie=Authenticator.COOKIE_DROP,
+            datapath=dp, match=match_inport, cookie=Authenticator._COOKIE_DROP,
             command=ofproto.OFPFC_DELETE)
         dp.send_msg(mod_inport)
 
         match_any = ofproto_parser.OFPMatch()
         mod_outport = dp.ofproto_parser.OFPFlowMod(
-            datapath=dp, match=match_any, cookie=Authenticator.COOKIE_DROP,
+            datapath=dp, match=match_any, cookie=Authenticator._COOKIE_DROP,
             command=ofproto.OFPFC_DELETE, out_port=port_no)
         dp.send_msg(mod_outport)
 
@@ -186,7 +187,7 @@ class Authenticator(app_manager.RyuApp):
 
         match = ofproto_parser.OFPMatch(in_port=ev.port)
         mod = dp.ofproto_parser.OFPFlowMod(
-            datapath=dp, match=match, cookie=Authenticator.COOKIE_DROP,
+            datapath=dp, match=match, cookie=Authenticator._COOKIE_DROP,
             command=ofproto.OFPFC_DELETE)
         dp.send_msg(mod)
 
