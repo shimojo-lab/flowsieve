@@ -18,22 +18,22 @@ class UserStore(object):
         self._read_definition_file()
 
     def get_user(self, user_name):
-        assert isinstance(user_name, str)
+        assert isinstance(user_name, basestring)
 
         return self.users.get(user_name)
 
     def get_role(self, role_name):
-        assert isinstance(role_name, str)
+        assert isinstance(role_name, basestring)
 
         return self.roles.get(role_name)
 
     def del_user(self, user_name):
-        assert isinstance(user_name, str)
+        assert isinstance(user_name, basestring)
 
         del self.users[user_name]
 
     def del_role(self, role_name):
-        assert isinstance(role_name, str)
+        assert isinstance(role_name, basestring)
 
         del self.roles[role_name]
 
