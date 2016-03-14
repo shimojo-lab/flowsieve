@@ -3,6 +3,8 @@ roles:
     allowed_users:
       - user2
       - user3
+    allowed_roles:
+      - allow_role1
   - name: role2
     allowed_users:
       - user1
@@ -13,6 +15,9 @@ roles:
     public: true
   - name: family_role
     family: true
+  - name: allow_role1
+    allowed_roles:
+      - role1
 
 users:
   - name: user1
@@ -36,3 +41,6 @@ users:
   - name: family_user2
     password: family_user2
     role: family_role
+  - name: allow_role1_user
+    password: allow_role1_user
+    role: allow_role1
