@@ -1,1 +1,38 @@
-roles:  - name: role1    allowed_users:      - user2      - user3  - name: role2    allowed_users:      - user1  - name: role3    allowed_users:      - user1  - name: public_role    public: true  - name: family_role    family: trueusers:  - name: user1    password: user1    role: role1  - name: user1_family    password: user1_family    role: role1  - name: user2    password: user2    role: role2  - name: user3    password: user3    role: role3  - name: public_user    password: public_user    role: public_role  - name: family_user1    password: family_user1    role: family_role  - name: family_user2    password: family_user2    role: family_role
+roles:
+  - name: role1
+    allowed_users:
+      - user2
+      - user3
+  - name: role2
+    allowed_users:
+      - user1
+  - name: role3
+    allowed_users:
+      - user1
+  - name: public_role
+    public: true
+  - name: family_role
+    family: true
+
+users:
+  - name: user1
+    password: user1
+    role: role1
+  - name: user1_family
+    password: user1_family
+    role: role1
+  - name: user2
+    password: user2
+    role: role2
+  - name: user3
+    password: user3
+    role: role3
+  - name: public_user
+    password: public_user
+    role: public_role
+  - name: family_user1
+    password: family_user1
+    role: family_role
+  - name: family_user2
+    password: family_user2
+    role: family_role
