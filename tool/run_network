@@ -10,7 +10,7 @@ from mininet.cli import CLI
 from mininet.log import setLogLevel
 from mininet.net import Mininet
 from mininet.node import Host, RemoteController
-from mininet.topo import SingleSwitchTopo
+from mininet.topo import Topo
 from mininet.util import dumpNodeConnections
 
 
@@ -40,9 +40,102 @@ def generate_xsupplicant_user_conf(host):
     host.cmd("echo '%s' > /etc/xsupplicant.user.conf " % user_conf)
 
 
+def execute_connect_tool(host):
+    host_to_user = {
+        "h1": "dev1",
+        "h2": "dev2",
+        "h3": "dev3",
+        "h4": "dev_srv1",
+        "h5": "dev_srv2",
+        "h6": "dev_srv3",
+        "h7": "sal1",
+        "h8": "sal2",
+        "h9": "sal3",
+        "h10": "sal_srv1",
+        "h11": "sal_srv2",
+        "h12": "hr1",
+        "h13": "hr2",
+        "h14": "hr3",
+        "h15": "hr_srv1",
+        "h16": "hr_srv2",
+        "h17": "ga1",
+        "h18": "ga2",
+        "h19": "ga3",
+        "h20": "ga_srv1"
+    }
+
+    user_name = host_to_user[host.name]
+    if_name = host.name + "-eth0"
+
+    host.cmdPrint("connect-tool -C {0} -I {1}".format(user_name, if_name))
+
+
+class YamadaTopo(Topo):
+    def build(self):
+        # Core switch (s1) and edge switches (s2-s5)
+        s1 = self.addSwitch("s1")
+        s2 = self.addSwitch("s2")
+        s3 = self.addSwitch("s3")
+        s4 = self.addSwitch("s4")
+        s5 = self.addSwitch("s5")
+
+        self.addLink(s1, s2)
+        self.addLink(s1, s3)
+        self.addLink(s1, s4)
+        self.addLink(s1, s5)
+
+        # Development departmenet
+        h1 = self.addHost("h1")
+        self.addLink(h1, s2)
+        h2 = self.addHost("h2")
+        self.addLink(h2, s2)
+        h3 = self.addHost("h3")
+        self.addLink(h3, s2)
+        h4 = self.addHost("h4")
+        self.addLink(h4, s2)
+        h5 = self.addHost("h5")
+        self.addLink(h5, s2)
+        h6 = self.addHost("h6")
+        self.addLink(h6, s2)
+
+        # Sales Departmenet
+        h7 = self.addHost("h7")
+        self.addLink(h7, s3)
+        h8 = self.addHost("h8")
+        self.addLink(h8, s3)
+        h9 = self.addHost("h9")
+        self.addLink(h9, s3)
+        h10 = self.addHost("h10")
+        self.addLink(h10, s3)
+        h11 = self.addHost("h11")
+        self.addLink(h11, s3)
+
+        # Human Resources Departmenet
+        h12 = self.addHost("h12")
+        self.addLink(h12, s4)
+        h13 = self.addHost("h13")
+        self.addLink(h13, s4)
+        h14 = self.addHost("h14")
+        self.addLink(h14, s4)
+        h15 = self.addHost("h15")
+        self.addLink(h15, s4)
+        h16 = self.addHost("h16")
+        self.addLink(h16, s4)
+
+        # General Affairs Departmenet
+        h17 = self.addHost("h17")
+        self.addLink(h17, s5)
+        h18 = self.addHost("h18")
+        self.addLink(h18, s5)
+        h19 = self.addHost("h19")
+        self.addLink(h19, s5)
+        h20 = self.addHost("h20")
+        self.addLink(h20, s5)
+
+
 def launch_network():
     "Create and test a simple network"
-    topo = SingleSwitchTopo(4)
+    topo = YamadaTopo()
     private_dirs = ["/tmp", "/etc", ("/var/log", "/var/%(name)s/log"),
                     "/var/run"]
     host = partial(Host, privateDirs=private_dirs)
@@ -52,9 +145,8 @@ def launch_network():
     for host in net.hosts:
         generate_xsupplicant_conf(host)
         generate_xsupplicant_user_conf(host)
-
-    for host in net.hosts:
-        host.cmd("xsupplicant")
+        host.cmd("xsupplicant -d A")
+        execute_connect_tool(host)
 
     print "Dumping host connections"
     dumpNodeConnections(net.hosts)

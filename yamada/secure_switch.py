@@ -100,7 +100,7 @@ class SecureSwitch(app_manager.RyuApp):
         if is_authorized:
             self.logger.info("Access allowed: %s -> %s", src, dst)
         else:
-            self.logger.info("Access denied: %s -> %s", src, dst)
+            self.logger.warning("Access denied: %s -> %s", src, dst)
             self._install_ephemeral_drop_flow(datapath, src, dst)
             return
 
