@@ -4,7 +4,7 @@ Yamada 802.1X Authenticator
 
 from ryu.base import app_manager
 from ryu.controller import dpset, ofp_event
-from ryu.controller.handler import MAIN_DISPATCHER
+from ryu.controller.handler import DEAD_DISPATCHER, MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
@@ -93,15 +93,19 @@ class Authenticator(app_manager.RyuApp):
             command=ofproto.OFPFC_DELETE, out_port=port_no)
         dp.send_msg(mod_outport)
 
-    @set_ev_cls(ofp_event.EventOFPStateChange, MAIN_DISPATCHER)
+    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER,
+                                                DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
         dp = ev.datapath
         if dp.id is None:
             return
 
-        self.logger.info("Datapath %016x connected", dp.id)
-        self._install_eapol_flow(dp)
-        self._install_drop_flow(dp)
+        if ev.state == MAIN_DISPATCHER:
+            self.logger.info("Datapath %016x connected", dp.id)
+            self._install_eapol_flow(dp)
+            self._install_drop_flow(dp)
+        elif ev.state == DEAD_DISPATCHER:
+            self.logger.info("Datapath %016x disconnected", dp.id)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
