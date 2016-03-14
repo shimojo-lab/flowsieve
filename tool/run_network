@@ -1,10 +1,10 @@
 #!/usr/bin/python
+import os
+import sys
 
 from functools import partial
 
-from xml.dom import minidom
-from xml.etree import ElementTree
-from xml.etree.ElementTree import Element, SubElement
+from jinja2 import Environment, FileSystemLoader
 
 from mininet.cli import CLI
 from mininet.log import setLogLevel
@@ -14,56 +14,30 @@ from mininet.topo import SingleSwitchTopo
 from mininet.util import dumpNodeConnections
 
 
-def prettify(elem):
-    # Return a pretty-printed XML string for the Element.
-    rough_string = ElementTree.tostring(elem, "utf-8")
-    reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ")
-
-
 def generate_xsupplicant_conf(host):
-    top = Element("XsupplicantConfig",
-                  {"version": "1.0",
-                   "generated_data": "1/20/07"})
-    SubElement(top, "Globals")
-    devices = SubElement(top, "Devices")
-    interface = SubElement(devices, "Interface")
-    description = SubElement(interface, "Description")
-    description.text = host.name + "-eth0"
-    mac = SubElement(interface, "MAC")
-    mac.text = host.MAC(host.name + "-eth0").replace(":", "-")
-    wireless = SubElement(interface, "Wireless")
-    wireless.text = "no"
+    env = Environment(loader=FileSystemLoader("/vagrant/tool/template/"))
+    tpl_conf = env.get_template("xsupplicant.tpl.conf")
 
-    host.cmd("echo '%s' > /etc/xsupplicant.conf" % prettify(top))
+    if_name = host.name + "-eth0"
+    conf = tpl_conf.render({"if_name": if_name,
+                            "mac_addr": host.MAC(if_name).replace(":", "-")})
+    host.cmd("echo '%s' > /etc/xsupplicant.conf" % conf)
 
 
 def generate_xsupplicant_user_conf(host):
-    top = Element("XsupplicantConfig",
-                  {"version": "1.0",
-                   "generated_data": "1/20/07"})
-    connections = SubElement(top, "Connections")
-    connection = SubElement(connections, "Connection")
-    connection_name = SubElement(connection, "Name")
-    connection_name.text = "test"
-    connection_profile = SubElement(connection, "Profile")
-    connection_profile.text = "test"
-    connection_itf = SubElement(connection, "Interface")
-    connection_itf.text = host.name + "-eth0"
+    sys.path.append(
+        os.path.abspath(
+            os.path.join(
+                os.path.abspath(os.path.dirname(__file__)), "..")))
+    from yamada.user_store import UserStore
 
-    profiles = SubElement(top, "Profiles")
-    profile = SubElement(profiles, "Profile")
-    profile_name = SubElement(profile, "Name")
-    profile_name.text = "test"
-    profile_identity = SubElement(profile, "Identity")
-    profile_identity.text = "TIS"
-    profile_eap = SubElement(profile, "EAP")
-    eap_type = SubElement(profile_eap, "Type")
-    eap_type.text = "MD5"
-    eap_passwd = SubElement(profile_eap, "Password")
-    eap_passwd.text = "TIS"
-
-    host.cmd("echo '%s' > /etc/xsupplicant.user.conf" % prettify(top))
+    env = Environment(loader=FileSystemLoader("/vagrant/tool/template/"))
+    tpl_user_conf = env.get_template("xsupplicant.tpl.user.conf")
+    if_name = host.name + "-eth0"
+    profiles = UserStore().users.values()
+    user_conf = tpl_user_conf.render({"if_name": if_name,
+                                      "profiles": profiles})
+    host.cmd("echo '%s' > /etc/xsupplicant.user.conf " % user_conf)
 
 
 def launch_network():

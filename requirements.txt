@@ -7,6 +7,7 @@ flake8-double-quotes==0.0.1
 flake8-import-order==0.7
 funcsigs==0.4
 greenlet==0.4.9
+jinja2==2.8
 mccabe==0.4.0
 msgpack-python==0.4.7
 netaddr==0.7.18
