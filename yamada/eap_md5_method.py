@@ -13,7 +13,8 @@ from ryu.lib.packet import ethernet, packet
 
 from transitions import Machine
 
-from yamada import eap, eap_events, eapol, user_store
+from yamada import eap_events, user_store
+from yamada.packet import eap, eapol
 
 
 class EAPMD5Context(object):

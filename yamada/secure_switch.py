@@ -29,7 +29,7 @@ from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
 
 from yamada import eap_events
-from yamada.eapol import ETH_TYPE_EAPOL
+from yamada.packet.eapol import ETH_TYPE_EAPOL
 
 
 class SecureSwitch(app_manager.RyuApp):
