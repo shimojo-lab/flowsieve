@@ -18,7 +18,24 @@ class UserStore(object):
         self._read_definition_file()
 
     def get_user(self, user_name):
+        assert isinstance(user_name, basestring)
+
         return self.users.get(user_name)
+
+    def get_role(self, role_name):
+        assert isinstance(role_name, basestring)
+
+        return self.roles.get(role_name)
+
+    def del_user(self, user_name):
+        assert isinstance(user_name, basestring)
+
+        del self.users[user_name]
+
+    def del_role(self, role_name):
+        assert isinstance(role_name, basestring)
+
+        del self.roles[role_name]
 
     def _read_definition_file(self):
         try:
@@ -40,74 +57,39 @@ class UserStore(object):
 
         self._load_relations()
 
-    def _store_user_data(self, users):
-        for user in users:
-            if not self._validate_user_keys(user):
+    def _store_user_data(self, items):
+        for item in items:
+            user = User.from_dict(item)
+
+            if user is None:
                 continue
 
-            name = user["name"]
-            password = user["password"]
-            role_name = user["role"]
-            u = User(name, password, role_name)
-
-            if name in self.users:
-                self._logger.warning("Duplicate user name %s", name)
-                continue
-            self.users[name] = u
-
-    def _store_role_data(self, roles):
-        for role in roles:
-            if not self._validate_role_keys(role):
+            if user.name in self.users:
+                self._logger.warning("Duplicate user name %s", user.name)
                 continue
 
-            name = role["name"]
-            allowed_users = []
-            for allowed_user in role.get("allowed_users", []):
-                if allowed_user in allowed_users:
-                    self._logger.warning("Duplicate user %s in section"
-                                         " allowed_users of role %s",
-                                         allowed_user, name)
-                    continue
+            self.users[user.name] = user
 
-                allowed_users.append(allowed_user)
+    def _store_role_data(self, items):
+        for item in items:
+            role = Role.from_dict(item)
 
-            acl = ACL(allowed_users=allowed_users,
-                      is_public=role.get("public", False),
-                      is_family=role.get("family", False))
-
-            r = Role(name, acl)
-            if name in self.roles:
-                self._logger.warning("Duplicate role name %s", name)
+            if role is None:
                 continue
-            self.roles[name] = r
 
-    def _validate_user_keys(self, user):
-        return "name" in user and "password" in user and "role" in user
+            if role.name in self.roles:
+                self._logger.warning("Duplicate role name %s", role.name)
+                continue
 
-    def _validate_role_keys(self, role):
-        return "name" in role
+            self.roles[role.name] = role
 
     def _load_relations(self):
         """Load relations between models"""
         for user in self.users.values():
-            role = self.roles.get(user.role_name)
-            if role is None:
-                self._logger.warning("Unknown role %s for user %s",
-                                     user.role_name, user.name)
-                del self.users[user.name]
-
-            user.role = role
+            user.load_relations(self)
 
         for role in self.roles.values():
-            for user_name in role.acl.allowed_user_names:
-                user = self.users.get(user_name)
-                if user is None:
-                    self._logger.warning("Unknwon user %s in section"
-                                         " allowed_users of role %s",
-                                         user_name, role.name)
-                    continue
-
-                role.acl.allowed_users.append(user)
+            role.load_relations(self)
 
 
 class Role(object):
@@ -115,9 +97,32 @@ class Role(object):
         super(Role, self).__init__()
         self.name = name
         self.acl = acl
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
+
+    def load_relations(self, user_store):
+        self.acl.load_relations(user_store)
+
+    @classmethod
+    def _validate_role_keys(cls, item):
+        return "name" in item
+
+    @classmethod
+    def from_dict(cls, item):
+        assert isinstance(item, dict)
+
+        if not cls._validate_role_keys(item):
+            return None
+
+        name = item["name"]
+        acl = ACL.from_dict(item)
+
+        return Role(name, acl)
+
+    def __repr__(self):
+        return "<Role name=\"{0}\" acl={1}>".format(self.name, self.acl)
 
 
 class User(object):
@@ -127,11 +132,14 @@ class User(object):
         self.password = password
         self.role_name = role_name
         self.role = None
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
 
     def can_access_user(self, other):
+        assert isinstance(other, User)
+
         if other is None:
             return False
 
@@ -153,11 +161,71 @@ class User(object):
 
         return check1 and check2
 
+    def load_relations(self, user_store):
+        role = user_store.get_role(self.role_name)
+        if role is None:
+            self._logger.warning("Unknown role %s for user %s",
+                                 self.role_name, self.name)
+            user_store.del_user(self.name)
+
+        self.role = role
+
+    @classmethod
+    def _validate_user_keys(cls, item):
+        return "name" in item and "password" in item and "role" in item
+
+    @classmethod
+    def from_dict(cls, item):
+        assert isinstance(item, dict)
+
+        if not cls._validate_user_keys(item):
+            return None
+
+        name = item["name"]
+        password = item["password"]
+        role_name = item["role"]
+
+        return User(name, password, role_name)
+
+    def __repr__(self):
+        return "<User name=\"{0}\" role=\"{1}\">".format(
+            self.name, self.role_name
+        )
+
 
 class ACL(object):
     def __init__(self, **kwargs):
         super(ACL, self).__init__()
         self.allowed_user_names = kwargs.get("allowed_users", [])
         self.allowed_users = []
-        self.is_family = kwargs.get("is_family", False)
-        self.is_public = kwargs.get("is_public", False)
+        self.is_family = kwargs.get("family", False)
+        self.is_public = kwargs.get("public", False)
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+    def load_relations(self, user_store):
+        for user_name in self.allowed_user_names:
+            user = user_store.get_user(user_name)
+            if user is None:
+                self._logger.warning("Unknwon user %s in section"
+                                     " allowed_users of an ACL", user_name)
+                continue
+
+            self.allowed_users.append(user)
+
+    @classmethod
+    def from_dict(cls, item):
+        assert isinstance(item, dict)
+
+        return ACL(**item)
+
+    def __repr__(self):
+        repr_family = ""
+        if self.is_family:
+            repr_family = " family"
+        repr_public = ""
+        if self.is_public:
+            repr_public = " public"
+
+        return "<ACL{0}{1} allowed_users={2}>".format(
+            repr_family, repr_public, self.allowed_user_names
+        )
