@@ -1,5 +1,7 @@
 import logging
 
+from yamada.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
+
 from yaml import YAMLError, load
 
 
@@ -85,11 +87,10 @@ class UserStore(object):
 
     def _load_relations(self):
         """Load relations between models"""
-        for user in self.users.values():
-            user.load_relations(self)
-
         for role in self.roles.values():
             role.load_relations(self)
+        for user in self.users.values():
+            user.load_relations(self)
 
 
 class Role(object):
@@ -103,7 +104,13 @@ class Role(object):
         return isinstance(other, self.__class__) and self.name == other.name
 
     def load_relations(self, user_store):
+        self.acl.role = self
         self.acl.load_relations(user_store)
+
+    def allows_user(self, other):
+        assert isinstance(other, User)
+
+        return other in self.user_set
 
     @classmethod
     def _validate_role_keys(cls, item):
@@ -126,40 +133,20 @@ class Role(object):
 
 
 class User(object):
-    def __init__(self, name, password, role_name):
+    def __init__(self, name, password, role_name, acl):
         super(User, self).__init__()
         self.name = name
         self.password = password
         self.role_name = role_name
+        self.acl = acl
         self.role = None
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
 
-    def can_access_user(self, other):
-        assert isinstance(other, User)
-
-        if other is None:
-            return False
-
-        # Allow access between same user
-        if self == other:
-            return True
-
-        # If any of the two is public, grant access
-        if self.role.acl.is_public or other.role.acl.is_public:
-            return True
-
-        # Allow intra-role communication if role is a family
-        if self.role == other.role and self.role.acl.is_family:
-            return True
-
-        # Check for both directions
-        check1 = self in other.role.acl.allowed_users
-        check2 = other in self.role.acl.allowed_users
-
-        return check1 and check2
+    def allows_user(self, other):
+        return self.acl.allows_user(other)
 
     def load_relations(self, user_store):
         role = user_store.get_role(self.role_name)
@@ -169,6 +156,10 @@ class User(object):
             user_store.del_user(self.name)
 
         self.role = role
+
+        self.acl.user = self
+        self.acl.parent = self.role.acl
+        self.acl.load_relations(user_store)
 
     @classmethod
     def _validate_user_keys(cls, item):
@@ -184,8 +175,9 @@ class User(object):
         name = item["name"]
         password = item["password"]
         role_name = item["role"]
+        acl = ACL.from_dict(item)
 
-        return User(name, password, role_name)
+        return User(name, password, role_name, acl)
 
     def __repr__(self):
         return "<User name=\"{0}\" role=\"{1}\">".format(
@@ -200,6 +192,15 @@ class ACL(object):
         self.allowed_users = []
         self.is_family = kwargs.get("family", False)
         self.is_public = kwargs.get("public", False)
+
+        # Role object if this ACL is associated to a role
+        self.role = kwargs.get("role")
+        # User object if this ACL is associated to an user
+        self.user = kwargs.get("user")
+        # Parent ACL object (e.g. parent of an user ACL is a role ACL)
+        self.parent = kwargs.get("parent")
+
+        self.user_set = EMPTY_USER_SET
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def load_relations(self, user_store):
@@ -211,6 +212,31 @@ class ACL(object):
                 continue
 
             self.allowed_users.append(user)
+
+        self.build_user_set()
+
+    def build_user_set(self):
+        self.user_set = EMPTY_USER_SET
+
+        if self.parent is not None:
+            self.parent.build_user_set()
+            self.user_set = self.parent.user_set
+
+        if self.user is not None:
+            self.user_set += UserSet(users=[self.user])
+
+        if self.is_family and self.role is not None:
+            self.user_set += UserSet(roles=[self.role])
+
+        if self.is_public:
+            self.user_set = WHOLE_USER_SET
+
+        self.user_set += UserSet(users=self.allowed_users)
+
+    def allows_user(self, other):
+        assert isinstance(other, User)
+
+        return other in self.user_set
 
     @classmethod
     def from_dict(cls, item):

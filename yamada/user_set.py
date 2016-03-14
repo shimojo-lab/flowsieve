@@ -1,6 +1,3 @@
-from yamada.user_store import Role, User
-
-
 class UserSet(object):
     """Represents a set of users"""
     def __init__(self, users=[], roles=[], predicate=lambda u: False):
@@ -9,11 +6,6 @@ class UserSet(object):
         assert isinstance(users, list) or isinstance(users, set)
         assert isinstance(roles, list) or isinstance(roles, set)
         assert hasattr(predicate, "__call__")
-
-        for user in users:
-            assert isinstance(user, User)
-        for role in roles:
-            assert isinstance(role, Role)
 
         users = set(users)
         roles = set(roles)

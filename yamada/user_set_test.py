@@ -12,17 +12,17 @@ class UserSetTestCase(TestCase):
         self.role2 = Role("role2", ACL())
         self.role3 = Role("role3", ACL())
 
-        self.user1 = User("user1", "", "role1")
+        self.user1 = User("user1", "", "role1", ACL())
         self.user1.role = self.role1
-        self.user2 = User("user2", "", "role1")
+        self.user2 = User("user2", "", "role1", ACL())
         self.user2.role = self.role1
-        self.user3 = User("user3", "", "role2")
+        self.user3 = User("user3", "", "role2", ACL())
         self.user3.role = self.role2
-        self.user4 = User("user4", "", "role2")
+        self.user4 = User("user4", "", "role2", ACL())
         self.user4.role = self.role2
-        self.user5 = User("user5", "", "role3")
+        self.user5 = User("user5", "", "role3", ACL())
         self.user5.role = self.role3
-        self.user6 = User("user6", "", "role3")
+        self.user6 = User("user6", "", "role3", ACL())
         self.user6.role = self.role3
 
     def test_empty_set(self):

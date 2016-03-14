@@ -213,7 +213,7 @@ class EAPMD5Method(app_manager.RyuApp):
         result = False
 
         if src_user is not None and dst_user is not None:
-            result = src_user.can_access_user(dst_user)
+            result = dst_user.allows_user(src_user)
 
         if dst == BROADCAST_STR:
             result = True
