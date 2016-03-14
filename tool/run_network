@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import os
 import sys
+import time
 
 from functools import partial
 
@@ -146,12 +147,16 @@ def launch_network():
         generate_xsupplicant_conf(host)
         generate_xsupplicant_user_conf(host)
         host.cmd("xsupplicant -d A")
+
+    for host in net.hosts:
         execute_connect_tool(host)
 
     print "Dumping host connections"
     dumpNodeConnections(net.hosts)
 
     CLI(net)
+
+    # Run "px net.pingAll(timeout=1)" in CLI to test connectivity
 
     for host in net.hosts:
         host.cmd("killall xsupplicant")
