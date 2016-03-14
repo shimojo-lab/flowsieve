@@ -7,7 +7,7 @@ from yamada.user_store import UserStore
 
 class AccessControlTestCase(TestCase):
     def setUp(self):
-        self.user_store = UserStore("conf/test_access_control.yml")
+        self.user_store = UserStore("yamada/test/test_access_control.yml")
         self.user1 = self.user_store.get_user("user1")
         self.user1_family = self.user_store.get_user("user1_family")
         self.user2 = self.user_store.get_user("user2")

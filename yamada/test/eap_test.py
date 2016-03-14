@@ -2,7 +2,7 @@ from nose.tools import eq_
 
 from ryu.lib.packet import packet
 
-from yamada.eap import eap, eap_identify, eap_md5_challenge
+from yamada.packet.eap import eap, eap_identify, eap_md5_challenge
 
 EAP_TEST_CASES = [
     # EAP Sucess
