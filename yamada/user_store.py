@@ -190,6 +190,8 @@ class ACL(object):
         super(ACL, self).__init__()
         self.allowed_user_names = kwargs.get("allowed_users", [])
         self.allowed_users = []
+        self.allowed_role_names = kwargs.get("allowed_roles", [])
+        self.allowed_roles = []
         self.is_family = kwargs.get("family", False)
         self.is_public = kwargs.get("public", False)
 
@@ -213,6 +215,14 @@ class ACL(object):
 
             self.allowed_users.append(user)
 
+        for role_name in self.allowed_role_names:
+            role = user_store.get_role(role_name)
+            if role is None:
+                self._logger.warning("Unknown role %s in section"
+                                     " allowed_roles of an ACL", role_name)
+                continue
+            self.allowed_roles.append(role)
+
         self.build_user_set()
 
     def build_user_set(self):
@@ -232,6 +242,7 @@ class ACL(object):
             self.user_set = WHOLE_USER_SET
 
         self.user_set += UserSet(users=self.allowed_users)
+        self.user_set += UserSet(roles=self.allowed_roles)
 
     def allows_user(self, other):
         assert isinstance(other, User)
