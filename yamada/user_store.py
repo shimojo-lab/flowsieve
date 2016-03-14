@@ -121,6 +121,8 @@ class Role(object):
         assert isinstance(item, dict)
 
         if not cls._validate_role_keys(item):
+            logger = logging.getLogger(cls.__name__)
+            logger.warning("Skipping role since required key is missing")
             return None
 
         name = item["name"]
@@ -170,6 +172,8 @@ class User(object):
         assert isinstance(item, dict)
 
         if not cls._validate_user_keys(item):
+            logger = logging.getLogger(cls.__name__)
+            logger.warning("Skipping user since required key is missing")
             return None
 
         name = item["name"]
