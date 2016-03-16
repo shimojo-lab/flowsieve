@@ -2,7 +2,7 @@ from ryu.lib.packet import ethernet
 
 from yamada.acl.acl_result import ACLResult, PacketMatch
 from yamada.acl.base_acl import BaseACL
-from yamada.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
+from yamada.acl.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
 
 
 class UserACL(BaseACL):
