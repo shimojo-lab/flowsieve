@@ -1,3 +1,4 @@
+from yamada.acl.acl_result import ACLResult, PacketMatch
 from yamada.acl.base_acl import BaseACL
 from yamada.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
 
@@ -70,7 +71,7 @@ class UserACL(BaseACL):
         self.user_set += UserSet(roles=self.allowed_roles)
 
     def allows_packet(self, pkt, src_user):
-        return src_user in self.user_set
+        return ACLResult(src_user in self.user_set, PacketMatch())
 
     def __repr__(self):
         repr_family = ""

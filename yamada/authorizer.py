@@ -2,6 +2,7 @@
 Extensible Authorizer
 """
 
+import operator
 from itertools import imap
 
 from ryu.base import app_manager
@@ -49,19 +50,12 @@ class Authorizer(app_manager.RyuApp):
         result = False
 
         if src_user is not None and dst_user is not None:
-            result = all(imap(lambda acl: acl.allows_packet(pkt, src_user),
-                              dst_user.acls.itervalues()))
+            acl_results = imap(lambda acl: acl.allows_packet(pkt, src_user),
+                               dst_user.acls.itervalues())
+            result = reduce(operator.add, acl_results).accept
 
         if dst == BROADCAST_STR:
             result = True
 
         reply = events.AuthorizeReply(req.dst, result)
         self.reply_to_request(req, reply)
-
-
-class ACLResult(object):
-    def __init__(self, accept, match_rule):
-        super(ACLResult, self).__init__()
-
-    def __add__(self, other):
-        pass
