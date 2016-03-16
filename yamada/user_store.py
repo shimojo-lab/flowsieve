@@ -1,5 +1,4 @@
 import logging
-import re
 
 from yamada.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
 
@@ -239,12 +238,12 @@ class ACL(object):
     def build_user_set(self):
         self.user_set = EMPTY_USER_SET
 
-        p = re.compile(self.default, re.IGNORECASE)
-        if p.match("deny"):
+        default_str_low = self.default.lower()
+        if default_str_low == "deny":
             self.user_set = EMPTY_USER_SET
-        elif p.match("allow"):
+        elif default_str_low == "allow":
             self.user_set = WHOLE_USER_SET
-        elif p.match("inherit"):
+        elif default_str_low == "inherit":
             if self.parent is not None:
                 self.parent.build_user_set()
                 self.user_set = self.parent.user_set
