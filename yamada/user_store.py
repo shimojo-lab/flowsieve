@@ -1,5 +1,5 @@
-import re
 import logging
+import re
 
 from yamada.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
 
