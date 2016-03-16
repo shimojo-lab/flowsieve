@@ -124,8 +124,7 @@ class Role(object):
             return None
 
         name = item["name"]
-        acls = dict(map(lambda cls: (cls.__name__, cls.from_dict(item)),
-                        ACL_CLASSES))
+        acls = dict([(c.__name__, c.from_dict(item)) for c in ACL_CLASSES])
 
         return Role(name, acls)
 
@@ -176,8 +175,7 @@ class User(object):
         name = item["name"]
         password = item["password"]
         role_name = item["role"]
-        acls = dict(map(lambda cls: (cls.__name__, cls.from_dict(item)),
-                        ACL_CLASSES))
+        acls = dict([(c.__name__, c.from_dict(item)) for c in ACL_CLASSES])
 
         return User(name, password, role_name, acls)
 
