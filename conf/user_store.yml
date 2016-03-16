@@ -1,31 +1,74 @@
 roles:
   - name: Development
-    allowed_users:
-      - Development Server
-      - Test Server
     family: true
-  - name: Marketing
-    allowed_users:
-      - Marketing File Server
-  - name: Server
-    public: true
+  - name: Sales
+    family: true
+  - name: Human Resources
+  - name: General Affairs
 
 users:
-  - name: TIS
-    password: TIS
+  - name: dev1
     role: Development
-  - name: User1
     password: TIS
+  - name: dev2
     role: Development
-  - name: User2
     password: TIS
-    role: Marketing
-  - name: Development Server
+  - name: dev3
+    role: Development
     password: TIS
-    role: Server
-  - name: Test Server
+  - name: dev_srv1
+    role: Development
     password: TIS
-    role: Server
-  - name: Marketing File Server
+  - name: dev_srv2
+    role: Development
     password: TIS
-    role: Server
+  - name: dev_srv3
+    role: Development
+    password: TIS
+
+  - name: sal1
+    role: Sales
+    password: TIS
+  - name: sal2
+    role: Sales
+    password: TIS
+  - name: sal3
+    role: Sales
+    password: TIS
+  - name: sal_srv1
+    role: Sales
+    password: TIS
+  - name: sal_srv2
+    role: Sales
+    password: TIS
+
+  - name: hr1
+    role: Human Resources
+    password: TIS
+  - name: hr2
+    role: Human Resources
+    password: TIS
+  - name: hr3
+    role: Human Resources
+    password: TIS
+  - name: hr_srv1
+    role: Human Resources
+    public: true
+    password: TIS
+  - name: hr_srv2
+    role: Human Resources
+    password: TIS
+
+  - name: ga1
+    role: General Affairs
+    password: TIS
+  - name: ga2
+    role: General Affairs
+    password: TIS
+  - name: ga3
+    role: General Affairs
+    password: TIS
+  - name: ga_srv1
+    role: General Affairs
+    public: true
+    password: TIS
