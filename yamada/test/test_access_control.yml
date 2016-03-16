@@ -5,6 +5,8 @@ roles:
       - user3
     allowed_roles:
       - allow_role1
+      - default_allow_role
+      - default_deny_role
   - name: role2
     allowed_users:
       - user1
@@ -18,6 +20,10 @@ roles:
   - name: allow_role1
     allowed_roles:
       - role1
+  - name: default_deny_role
+    default: DENY
+  - name: default_allow_role
+    default: ALLOW
 
 users:
   - name: user1
@@ -44,3 +50,17 @@ users:
   - name: allow_role1_user
     password: allow_role1_user
     role: allow_role1
+  - name: default_allow_user
+    password: TIS
+    role: default_allow_role
+  - name: default_deny_user
+    password: TIS
+    role: default_deny_role
+  - name: inherit_user
+    default: INHERIT
+    password: TIS
+    role: role1
+  - name: not_inherit_user
+    defaule: DENY
+    password: TIS
+    role: role1

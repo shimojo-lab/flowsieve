@@ -1,3 +1,4 @@
+import re
 import logging
 
 from yamada.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
@@ -194,6 +195,7 @@ class ACL(object):
         self.allowed_roles = []
         self.is_family = kwargs.get("family", False)
         self.is_public = kwargs.get("public", False)
+        self.default = kwargs.get("default", "")
 
         # Role object if this ACL is associated to a role
         self.role = kwargs.get("role")
@@ -206,6 +208,15 @@ class ACL(object):
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def load_relations(self, user_store):
+        if self.default == "":
+            if self.user is not None:
+                self.default = "inherit"
+            elif self.role is not None:
+                self.default = "deny"
+            else:
+                self._logger.warning("ACL is associated to unknown Object")
+                self.default = "deny"
+
         for user_name in self.allowed_user_names:
             user = user_store.get_user(user_name)
             if user is None:
@@ -228,9 +239,15 @@ class ACL(object):
     def build_user_set(self):
         self.user_set = EMPTY_USER_SET
 
-        if self.parent is not None:
-            self.parent.build_user_set()
-            self.user_set = self.parent.user_set
+        p = re.compile(self.default, re.IGNORECASE)
+        if p.match("deny"):
+            self.user_set = EMPTY_USER_SET
+        elif p.match("allow"):
+            self.user_set = WHOLE_USER_SET
+        elif p.match("inherit"):
+            if self.parent is not None:
+                self.parent.build_user_set()
+                self.user_set = self.parent.user_set
 
         if self.user is not None:
             self.user_set += UserSet(users=[self.user])

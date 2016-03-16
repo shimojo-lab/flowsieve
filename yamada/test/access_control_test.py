@@ -16,6 +16,12 @@ class AccessControlTestCase(TestCase):
         self.family_user1 = self.user_store.get_user("family_user1")
         self.family_user2 = self.user_store.get_user("family_user2")
         self.allow_role1_user = self.user_store.get_user("allow_role1_user")
+        self.default_allow_user = self.user_store.get_user("default"
+                                                           "_allow_user")
+        self.default_deny_user = self.user_store.get_user("default"
+                                                          "_deny_user")
+        self.inherit_user = self.user_store.get_user("inherit_user")
+        self.not_inherit_user = self.user_store.get_user("not_inherit_user")
 
     def test_same_user(self):
         ok_(self.user1.allows_user(self.user1))
@@ -51,3 +57,11 @@ class AccessControlTestCase(TestCase):
         ok_(self.allow_role1_user.allows_user(self.user1))
         ok_(not self.user2.allows_user(self.allow_role1_user))
         ok_(not self.allow_role1_user.allows_user(self.user2))
+
+    def test_default(self):
+        ok_(self.default_allow_user.allows_user(self.user1))
+        ok_(not self.default_deny_user.allows_user(self.user1))
+
+    def test_inherit(self):
+        ok_(self.inherit_user.allows_user(self.user2))
+        ok_(not self.not_inherit_user.allows_user(self.user2))
