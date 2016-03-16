@@ -63,5 +63,7 @@ class AccessControlTestCase(TestCase):
         ok_(not self.default_deny_user.allows_user(self.user1))
 
     def test_inherit(self):
-        ok_(self.inherit_user.allows_user(self.user2))
-        ok_(not self.not_inherit_user.allows_user(self.user2))
+        ok_(self.inherit_user.allows_user(self.user1))
+        ok_(self.not_inherit_user.allows_user(self.user1))
+        ok_(not self.inherit_user.allows_user(self.default_allow_user))
+        ok_(self.not_inherit_user.allows_user(self.default_allow_user))

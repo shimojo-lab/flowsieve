@@ -13,6 +13,7 @@ roles:
   - name: role3
     allowed_users:
       - user1
+      - not_inherit_user
   - name: public_role
     public: true
   - name: family_role
@@ -24,6 +25,9 @@ roles:
     default: DENY
   - name: default_allow_role
     default: ALLOW
+  - name: role4
+    allowed_roles:
+      - role1
 
 users:
   - name: user1
@@ -59,8 +63,8 @@ users:
   - name: inherit_user
     default: INHERIT
     password: TIS
-    role: role1
+    role: role2
   - name: not_inherit_user
-    defaule: DENY
+    default: ALLOW
     password: TIS
-    role: role1
+    role: role2
