@@ -22,13 +22,13 @@ from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
-from ryu.lib.mac import haddr_to_bin
 from ryu.lib.packet import ether_types
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
 
 from yamada import events
+from yamada.acl.acl_result import ACLResult, PacketMatch
 from yamada.packet.eapol import ETH_TYPE_EAPOL
 
 
@@ -44,11 +44,8 @@ class SecureSwitch(app_manager.RyuApp):
         super(SecureSwitch, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
 
-    def add_flow(self, datapath, in_port, dst, actions):
+    def add_flow(self, datapath, match, actions):
         ofproto = datapath.ofproto
-
-        match = datapath.ofproto_parser.OFPMatch(
-            in_port=in_port, dl_dst=haddr_to_bin(dst))
 
         mod = datapath.ofproto_parser.OFPFlowMod(
             datapath=datapath, match=match,
@@ -58,11 +55,8 @@ class SecureSwitch(app_manager.RyuApp):
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
         datapath.send_msg(mod)
 
-    def _install_ephemeral_drop_flow(self, datapath, src, dst):
+    def _install_ephemeral_drop_flow(self, datapath, match):
         ofproto = datapath.ofproto
-
-        match = datapath.ofproto_parser.OFPMatch(
-            dl_src=haddr_to_bin(src), dl_dst=haddr_to_bin(dst))
 
         mod = datapath.ofproto_parser.OFPFlowMod(
             datapath=datapath, match=match,
@@ -96,12 +90,16 @@ class SecureSwitch(app_manager.RyuApp):
         self.logger.info("packet in %s %s %s %s", dpid, src, dst, msg.in_port)
 
         authorize_req = events.AuthorizeRequest(ev.msg)
-        is_authorized = self.send_request(authorize_req).result
-        if is_authorized:
+        result = self.send_request(authorize_req).result
+        result += ACLResult(True, PacketMatch(in_port=msg.in_port))
+
+        if result.accept:
             self.logger.info("Access allowed: %s -> %s", src, dst)
         else:
-            self.logger.warning("Access denied: %s -> %s", src, dst)
-            self._install_ephemeral_drop_flow(datapath, src, dst)
+            self.logger.info("Access denied: %s -> %s", src, dst)
+            result += ACLResult(True, PacketMatch(dl_dst=dst))
+            self._install_ephemeral_drop_flow(
+                datapath, result.match.to_ofp_match())
             return
 
         # learn a mac address to avoid FLOOD next time.
@@ -116,7 +114,7 @@ class SecureSwitch(app_manager.RyuApp):
 
         # install a flow to avoid packet_in next time
         if out_port != ofproto.OFPP_FLOOD:
-            self.add_flow(datapath, msg.in_port, dst, actions)
+            self.add_flow(datapath, result.match.to_ofp_match(), actions)
 
         data = None
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:

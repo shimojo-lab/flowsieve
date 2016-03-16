@@ -1,3 +1,5 @@
+from ryu.lib.packet import ethernet
+
 from yamada.acl.acl_result import ACLResult, PacketMatch
 from yamada.acl.base_acl import BaseACL
 from yamada.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
@@ -71,7 +73,12 @@ class UserACL(BaseACL):
         self.user_set += UserSet(roles=self.allowed_roles)
 
     def allows_packet(self, pkt, src_user):
-        return ACLResult(src_user in self.user_set, PacketMatch())
+        if pkt is None:
+            return ACLResult(src_user in self.user_set, PacketMatch())
+
+        eth = pkt.get_protocol(ethernet.ethernet)
+        return ACLResult(src_user in self.user_set,
+                         PacketMatch(dl_dst=eth.dst))
 
     def __repr__(self):
         repr_family = ""

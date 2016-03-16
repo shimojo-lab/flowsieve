@@ -1,4 +1,9 @@
-class PacketMatch(object):
+from ryu.lib.mac import haddr_to_bin
+from ryu.lib.stringify import StringifyMixin
+from ryu.ofproto.ofproto_v1_0_parser import OFPMatch
+
+
+class PacketMatch(StringifyMixin):
     def __init__(self, in_port=None, dl_src=None, dl_dst=None, dl_vlan=None,
                  dl_vlan_pcp=None, dl_type=None, nw_tos=None, nw_proto=None,
                  nw_src=None, nw_dst=None, tp_src=None, tp_dst=None,
@@ -29,9 +34,19 @@ class PacketMatch(object):
 
         return PacketMatch(**kwargs)
 
+    def to_ofp_match(self):
+        kwargs = self.__dict__.copy()
+
+        if self.dl_src is not None:
+            kwargs["dl_src"] = haddr_to_bin(self.dl_src)
+        if self.dl_dst is not None:
+            kwargs["dl_dst"] = haddr_to_bin(self.dl_dst)
+
+        return OFPMatch(**kwargs)
+
 
 class ACLResult(object):
-    def __init__(self, accept, match):
+    def __init__(self, accept, match=PacketMatch()):
         super(ACLResult, self).__init__()
         self.accept = accept
         self.match = match

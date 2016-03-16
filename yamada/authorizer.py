@@ -11,6 +11,7 @@ from ryu.lib.mac import BROADCAST_STR
 from ryu.lib.packet import ethernet, packet
 
 from yamada import events, user_store
+from yamada.acl.acl_result import ACLResult
 
 
 class Authorizer(app_manager.RyuApp):
@@ -47,15 +48,15 @@ class Authorizer(app_manager.RyuApp):
         src_user = self._get_user_by_mac(src)
         dst_user = self._get_user_by_mac(dst)
 
-        result = False
+        result = ACLResult(False)
 
         if src_user is not None and dst_user is not None:
             acl_results = imap(lambda acl: acl.allows_packet(pkt, src_user),
                                dst_user.acls.itervalues())
-            result = reduce(operator.add, acl_results).accept
+            result = reduce(operator.add, acl_results)
 
         if dst == BROADCAST_STR:
-            result = True
+            result = ACLResult(True)
 
         reply = events.AuthorizeReply(req.dst, result)
         self.reply_to_request(req, reply)
