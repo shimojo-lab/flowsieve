@@ -25,6 +25,7 @@ class AccessControlTestCase(TestCase):
         self.user_test_denied1 = self.user_store.get_user("user_test_denied1")
         self.user_test_denied2 = self.user_store.get_user("user_test_denied2")
         self.user_test_denied3 = self.user_store.get_user("user_test_denied3")
+        self.user_test_denied4 = self.user_store.get_user("user_test_denied4")
 
     def test_same_user(self):
         ok_(self.user1.acls["UserACL"].allows_packet(None, self.user1))
@@ -101,3 +102,5 @@ class AccessControlTestCase(TestCase):
             None, self.user_test_denied2))
         ok_(self.user_test_denied1.acls["UserACL"].allows_packet(
             None, self.user_test_denied3))
+        ok_(not self.user_test_denied1.acls["UserACL"].allows_packet(
+            None, self.user_test_denied4))
