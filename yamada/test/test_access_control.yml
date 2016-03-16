@@ -28,6 +28,14 @@ roles:
   - name: role4
     allowed_roles:
       - role1
+  - name: role_for_test_denied1
+    default: allow
+    denied_roles:
+      - role_for_test_denied2
+  - name: role_for_test_denied2
+    default: allow
+  - name: role_for_test_denied3
+    default: allow
 
 users:
   - name: user1
@@ -68,3 +76,12 @@ users:
     default: ALLOW
     password: TIS
     role: role2
+  - name: user_test_denied1
+    password: TIS
+    role: role_for_test_denied1
+  - name: user_test_denied2
+    password: TIS
+    role: role_for_test_denied2
+  - name: user_test_denied3
+    password: TIS
+    role: role_for_test_denied3
