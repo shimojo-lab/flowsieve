@@ -4,6 +4,8 @@ from yamada.acl.user_acl import UserACL
 
 from yaml import YAMLError, load
 
+ACL_CLASSES = [UserACL]
+
 
 class UserStore(object):
     DEFAULT_USER_ROLE_FILE = "conf/user_store.yml"
@@ -94,23 +96,19 @@ class UserStore(object):
 
 
 class Role(object):
-    def __init__(self, name, acl):
+    def __init__(self, name, acls):
         super(Role, self).__init__()
         self.name = name
-        self.acl = acl
+        self.acls = acls
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
 
     def load_relations(self, user_store):
-        self.acl.role = self
-        self.acl.load_relations(user_store)
-
-    def allows_user(self, other):
-        assert isinstance(other, User)
-
-        return other in self.user_set
+        for acl in self.acls.values():
+            acl.role = self
+            acl.load_relations(user_store)
 
     @classmethod
     def _validate_role_keys(cls, item):
@@ -126,29 +124,27 @@ class Role(object):
             return None
 
         name = item["name"]
-        acl = UserACL.from_dict(item)
+        acls = dict(map(lambda cls: (cls.__name__, cls.from_dict(item)),
+                        ACL_CLASSES))
 
-        return Role(name, acl)
+        return Role(name, acls)
 
     def __repr__(self):
         return "<Role name=\"{0}\" acl={1}>".format(self.name, self.acl)
 
 
 class User(object):
-    def __init__(self, name, password, role_name, acl):
+    def __init__(self, name, password, role_name, acls):
         super(User, self).__init__()
         self.name = name
         self.password = password
         self.role_name = role_name
-        self.acl = acl
+        self.acls = acls
         self.role = None
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
-
-    def allows_user(self, other):
-        return self.acl.allows_user(other)
 
     def load_relations(self, user_store):
         role = user_store.get_role(self.role_name)
@@ -159,9 +155,10 @@ class User(object):
 
         self.role = role
 
-        self.acl.user = self
-        self.acl.parent = self.role.acl
-        self.acl.load_relations(user_store)
+        for name, acl in self.acls.iteritems():
+            acl.user = self
+            acl.parent = self.role.acls.get(name)
+            acl.load_relations(user_store)
 
     @classmethod
     def _validate_user_keys(cls, item):
@@ -179,9 +176,10 @@ class User(object):
         name = item["name"]
         password = item["password"]
         role_name = item["role"]
-        acl = UserACL.from_dict(item)
+        acls = dict(map(lambda cls: (cls.__name__, cls.from_dict(item)),
+                        ACL_CLASSES))
 
-        return User(name, password, role_name, acl)
+        return User(name, password, role_name, acls)
 
     def __repr__(self):
         return "<User name=\"{0}\" role=\"{1}\">".format(

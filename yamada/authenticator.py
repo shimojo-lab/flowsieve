@@ -10,7 +10,9 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
 
-from yamada import eap_events, eap_md5_method, events, secure_switch
+from yamada import (
+    authorizer, eap_events, eap_md5_method, events, secure_switch
+)
 from yamada.packet import eap, eapol
 
 
@@ -25,6 +27,7 @@ class Authenticator(app_manager.RyuApp):
         "dpset": dpset.DPSet,
         "secure_switch": secure_switch.SecureSwitch,
         "eap_md5_method": eap_md5_method.EAPMD5Method,
+        "authorizer": authorizer.Authorizer,
     }
 
     _COOKIE_AUTHENTICATOR = 0xf000

@@ -69,8 +69,8 @@ class UserACL(BaseACL):
         self.user_set += UserSet(users=self.allowed_users)
         self.user_set += UserSet(roles=self.allowed_roles)
 
-    def allows_user(self, other):
-        return other in self.user_set
+    def allows_packet(self, pkt, src_user):
+        return src_user in self.user_set
 
     def __repr__(self):
         repr_family = ""
@@ -80,6 +80,6 @@ class UserACL(BaseACL):
         if self.is_public:
             repr_public = " public"
 
-        return "<ACL{0}{1} allowed_users={2}>".format(
+        return "<UserACL{0}{1} allowed_users={2}>".format(
             repr_family, repr_public, self.allowed_user_names
         )

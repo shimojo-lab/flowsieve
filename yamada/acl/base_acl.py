@@ -18,3 +18,6 @@ class BaseACL(object):
         assert isinstance(item, dict)
 
         return cls(**item)
+
+    def allows_packet(self, pkt, src_user):
+        raise NotImplementedError()
