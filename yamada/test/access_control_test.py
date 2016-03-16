@@ -24,46 +24,71 @@ class AccessControlTestCase(TestCase):
         self.not_inherit_user = self.user_store.get_user("not_inherit_user")
 
     def test_same_user(self):
-        ok_(self.user1.allows_user(self.user1))
-        ok_(self.user2.allows_user(self.user2))
-        ok_(self.user3.allows_user(self.user3))
-        ok_(self.public_user.allows_user(self.public_user))
-        ok_(self.family_user1.allows_user(self.family_user1))
-        ok_(self.family_user2.allows_user(self.family_user2))
+        ok_(self.user1.acls["UserACL"].allows_packet(None, self.user1))
+        ok_(self.user2.acls["UserACL"].allows_packet(None, self.user2))
+        ok_(self.user3.acls["UserACL"].allows_packet(None, self.user3))
+        ok_(self.public_user.acls["UserACL"].allows_packet(
+            None, self.public_user))
+        ok_(self.family_user1.acls["UserACL"].allows_packet(
+            None, self.family_user1))
+        ok_(self.family_user2.acls["UserACL"].allows_packet(
+            None, self.family_user2))
 
     def test_public_user(self):
-        ok_(self.public_user.allows_user(self.user1))
-        ok_(self.public_user.allows_user(self.user2))
-        ok_(self.public_user.allows_user(self.user3))
-        ok_(self.public_user.allows_user(self.public_user))
-        ok_(self.public_user.allows_user(self.family_user1))
-        ok_(self.public_user.allows_user(self.family_user2))
+        ok_(self.public_user.acls["UserACL"].allows_packet(None, self.user1))
+        ok_(self.public_user.acls["UserACL"].allows_packet(None, self.user2))
+        ok_(self.public_user.acls["UserACL"].allows_packet(None, self.user3))
+        ok_(self.public_user.acls["UserACL"].allows_packet(
+            None, self.public_user))
+        ok_(self.public_user.acls["UserACL"].allows_packet(
+            None, self.family_user1))
+        ok_(self.public_user.acls["UserACL"].allows_packet(
+            None, self.family_user2))
 
     def test_intra_role_communication(self):
-        ok_(not self.user1_family.allows_user(self.user1))
-        ok_(self.family_user1.allows_user(self.family_user2))
-        ok_(self.family_user2.allows_user(self.family_user1))
+        ok_(not self.user1_family.acls["UserACL"].allows_packet(
+            None, self.user1))
+        ok_(self.family_user1.acls["UserACL"].allows_packet(
+            None, self.family_user2))
+        ok_(self.family_user2.acls["UserACL"].allows_packet(
+            None, self.family_user1))
 
     def test_acl(self):
-        ok_(self.user1.allows_user(self.user2))
-        ok_(self.user1.allows_user(self.user3))
-        ok_(self.user2.allows_user(self.user1))
-        ok_(self.user3.allows_user(self.user1))
-        ok_(not self.user2.allows_user(self.user3))
-        ok_(not self.user3.allows_user(self.user2))
+        ok_(self.user1.acls["UserACL"].allows_packet(
+            None, self.user2))
+        ok_(self.user1.acls["UserACL"].allows_packet(
+            None, self.user3))
+        ok_(self.user2.acls["UserACL"].allows_packet(
+            None, self.user1))
+        ok_(self.user3.acls["UserACL"].allows_packet(
+            None, self.user1))
+        ok_(not self.user2.acls["UserACL"].allows_packet(
+            None, self.user3))
+        ok_(not self.user3.acls["UserACL"].allows_packet(
+            None, self.user2))
 
     def test_allowed_roles(self):
-        ok_(self.user1.allows_user(self.allow_role1_user))
-        ok_(self.allow_role1_user.allows_user(self.user1))
-        ok_(not self.user2.allows_user(self.allow_role1_user))
-        ok_(not self.allow_role1_user.allows_user(self.user2))
+        ok_(self.user1.acls["UserACL"].allows_packet(
+            None, self.allow_role1_user))
+        ok_(self.allow_role1_user.acls["UserACL"].allows_packet(
+            None, self.user1))
+        ok_(not self.user2.acls["UserACL"].allows_packet(
+            None, self.allow_role1_user))
+        ok_(not self.allow_role1_user.acls["UserACL"].allows_packet(
+            None, self.user2))
 
     def test_default(self):
-        ok_(self.default_allow_user.allows_user(self.user1))
-        ok_(not self.default_deny_user.allows_user(self.user1))
+        ok_(self.default_allow_user.acls["UserACL"].allows_packet(
+            None, self.user1))
+        ok_(not self.default_deny_user.acls["UserACL"].allows_packet(
+            None, self.user1))
 
     def test_inherit(self):
-        ok_(self.inherit_user.allows_user(self.user1))
-        ok_(self.not_inherit_user.allows_user(self.user1))
-        ok_(not self.inherit_user.allows_user(self.default_allow_user))
-        ok_(self.not_inherit_user.allows_user(self.default_allow_user))
+        ok_(self.inherit_user.acls["UserACL"].allows_packet(
+            None, self.user1))
+        ok_(self.not_inherit_user.acls["UserACL"].allows_packet(
+            None, self.user1))
+        ok_(not self.inherit_user.acls["UserACL"].allows_packet(
+            None, self.default_allow_user))
+        ok_(self.not_inherit_user.acls["UserACL"].allows_packet(
+            None, self.default_allow_user))

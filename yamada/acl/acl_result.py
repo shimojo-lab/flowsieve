@@ -41,3 +41,6 @@ class ACLResult(object):
 
         return ACLResult(self.accept and other.accept,
                          self.match + other.match)
+
+    def __nonzero__(self):
+        return self.accept
