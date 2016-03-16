@@ -7,7 +7,8 @@ import md5
 import struct
 
 from ryu.base import app_manager
-from ryu.controller.handler import set_ev_cls
+from ryu.controller import ofp_event
+from ryu.controller.handler import DEAD_DISPATCHER, set_ev_cls
 from ryu.lib.mac import BROADCAST_STR
 from ryu.lib.packet import ethernet, packet
 
@@ -221,3 +222,17 @@ class EAPMD5Method(app_manager.RyuApp):
 
         reply = eap_events.AuthorizeReply(req.dst, result)
         self.reply_to_request(req, reply)
+
+    @set_ev_cls(ofp_event.EventOFPStateChange, DEAD_DISPATCHER)
+    def _state_change_handler(self, ev):
+        dp = ev.datapath
+        if dp.id is None:
+            return
+
+        for ctx in self._contexts.values():
+            if ctx.dpid == dp.id:
+                del self._contexts[(ctx.dpid, ctx.port)]
+
+        for ctx in self._mac_to_contexts.values():
+            if ctx.dpid == dp.id:
+                del self._contexts[ctx.host_mac]
