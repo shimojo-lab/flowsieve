@@ -2,6 +2,8 @@
 Extensible Authorizer
 """
 
+from itertools import imap
+
 from ryu.base import app_manager
 from ryu.controller.handler import set_ev_cls
 from ryu.lib.mac import BROADCAST_STR
@@ -47,9 +49,8 @@ class Authorizer(app_manager.RyuApp):
         result = False
 
         if src_user is not None and dst_user is not None:
-            results = map(lambda acl: acl.allows_packet(pkt, src_user),
-                          dst_user.acls.values())
-            result = reduce(lambda a, b: a and b, results)
+            result = all(imap(lambda acl: acl.allows_packet(pkt, src_user),
+                              dst_user.acls.itervalues()))
 
         if dst == BROADCAST_STR:
             result = True

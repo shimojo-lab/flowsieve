@@ -89,9 +89,9 @@ class UserStore(object):
 
     def _load_relations(self):
         """Load relations between models"""
-        for role in self.roles.values():
+        for role in self.roles.itervalues():
             role.load_relations(self)
-        for user in self.users.values():
+        for user in self.users.itervalues():
             user.load_relations(self)
 
 
@@ -106,7 +106,7 @@ class Role(object):
         return isinstance(other, self.__class__) and self.name == other.name
 
     def load_relations(self, user_store):
-        for acl in self.acls.values():
+        for acl in self.acls.itervalues():
             acl.role = self
             acl.load_relations(user_store)
 
