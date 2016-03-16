@@ -14,7 +14,7 @@ from ryu.lib.packet import ethernet, packet
 
 from transitions import Machine
 
-from yamada import eap_events, user_store
+from yamada import eap_events, events, user_store
 from yamada.packet import eap, eapol
 
 
@@ -64,8 +64,8 @@ class EAPMD5Context(object):
 class EAPMD5Method(app_manager.RyuApp):
     """EAP-MD5 authentication method implementation
     """
-    _EVENTS = [eap_events.EventOutputEAPOL, eap_events.EventPortAuthorized,
-               eap_events.EventPortLoggedOff]
+    _EVENTS = [eap_events.EventOutputEAPOL, events.EventPortAuthorized,
+               events.EventPortLoggedOff]
 
     def __init__(self, *args, **kwargs):
         super(EAPMD5Method, self).__init__(*args, **kwargs)
@@ -115,7 +115,7 @@ class EAPMD5Method(app_manager.RyuApp):
             del self._mac_to_contexts[ctx.host_mac]
 
         self.send_event_to_observers(
-            eap_events.EventPortLoggedOff(ev.dpid, ev.port)
+            events.EventPortLoggedOff(ev.dpid, ev.port)
         )
 
     @set_ev_cls(eap_events.EventStartEAPMD5Challenge)
@@ -165,7 +165,7 @@ class EAPMD5Method(app_manager.RyuApp):
             code = eap.EAP_CODE_SUCCESS
             ctx.logon()
             self.send_event_to_observers(
-                eap_events.EventPortAuthorized(ev.dpid, ev.port)
+                events.EventPortAuthorized(ev.dpid, ev.port)
             )
         else:
             code = eap.EAP_CODE_FAILURE
@@ -202,7 +202,7 @@ class EAPMD5Method(app_manager.RyuApp):
 
         return self._user_store.get_user(user_name)
 
-    @set_ev_cls(eap_events.AuthorizeRequest)
+    @set_ev_cls(events.AuthorizeRequest)
     def _authorize_request_handler(self, req):
         pkt = packet.Packet(req.msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
@@ -220,7 +220,7 @@ class EAPMD5Method(app_manager.RyuApp):
         if dst == BROADCAST_STR:
             result = True
 
-        reply = eap_events.AuthorizeReply(req.dst, result)
+        reply = events.AuthorizeReply(req.dst, result)
         self.reply_to_request(req, reply)
 
     @set_ev_cls(ofp_event.EventOFPStateChange, DEAD_DISPATCHER)

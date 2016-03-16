@@ -28,13 +28,13 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
 
-from yamada import eap_events
+from yamada import events
 from yamada.packet.eapol import ETH_TYPE_EAPOL
 
 
 class SecureSwitch(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
-    _EVENTS = [eap_events.AuthorizeRequest]
+    _EVENTS = [events.AuthorizeRequest]
 
     _COOKIE_SECURE_SWITCH = 0xf100
     _COOKIE_FORWARD = _COOKIE_SECURE_SWITCH | 0x01
@@ -95,7 +95,7 @@ class SecureSwitch(app_manager.RyuApp):
 
         self.logger.info("packet in %s %s %s %s", dpid, src, dst, msg.in_port)
 
-        authorize_req = eap_events.AuthorizeRequest(ev.msg)
+        authorize_req = events.AuthorizeRequest(ev.msg)
         is_authorized = self.send_request(authorize_req).result
         if is_authorized:
             self.logger.info("Access allowed: %s -> %s", src, dst)
