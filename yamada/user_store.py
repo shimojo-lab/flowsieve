@@ -208,13 +208,13 @@ class ACL(object):
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def load_relations(self, user_store):
-        if self.default == "":
+        if self.user is None and self.role is None:
+            self._logger.warning("ACL is associated to an unknown object")
+            self.default = "deny"
+        elif self.default == "":
             if self.user is not None:
                 self.default = "inherit"
             elif self.role is not None:
-                self.default = "deny"
-            else:
-                self._logger.warning("ACL is associated to unknown Object")
                 self.default = "deny"
 
         for user_name in self.allowed_user_names:
