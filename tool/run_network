@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import os
 import sys
-import time
 
 from functools import partial
 
@@ -15,8 +14,11 @@ from mininet.topo import Topo
 from mininet.util import dumpNodeConnections
 
 
+TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "template")
+
+
 def generate_xsupplicant_conf(host):
-    env = Environment(loader=FileSystemLoader("/vagrant/tool/template/"))
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     tpl_conf = env.get_template("xsupplicant.tpl.conf")
 
     if_name = host.name + "-eth0"
@@ -32,7 +34,7 @@ def generate_xsupplicant_user_conf(host):
                 os.path.abspath(os.path.dirname(__file__)), "..")))
     from yamada.user_store import UserStore
 
-    env = Environment(loader=FileSystemLoader("/vagrant/tool/template/"))
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     tpl_user_conf = env.get_template("xsupplicant.tpl.user.conf")
     if_name = host.name + "-eth0"
     profiles = UserStore().users.values()
