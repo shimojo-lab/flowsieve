@@ -1,10 +1,11 @@
 import logging
 
+from yamada.acl.service_acl import ServiceACL
 from yamada.acl.user_acl import UserACL
 
 from yaml import YAMLError, load
 
-ACL_CLASSES = [UserACL]
+ACL_CLASSES = [UserACL, ServiceACL]
 
 
 class UserStore(object):
@@ -105,6 +106,9 @@ class Role(object):
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
 
+    def __hash__(self):
+        return hash(self.name)
+
     def load_relations(self, user_store):
         for acl in self.acls.itervalues():
             acl.role = self
@@ -124,8 +128,7 @@ class Role(object):
             return None
 
         name = item["name"]
-        acls = dict(map(lambda cls: (cls.__name__, cls.from_dict(item)),
-                        ACL_CLASSES))
+        acls = dict([(c.__name__, c.from_dict(item)) for c in ACL_CLASSES])
 
         return Role(name, acls)
 
@@ -145,6 +148,9 @@ class User(object):
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
 
     def load_relations(self, user_store):
         role = user_store.get_role(self.role_name)
@@ -176,8 +182,7 @@ class User(object):
         name = item["name"]
         password = item["password"]
         role_name = item["role"]
-        acls = dict(map(lambda cls: (cls.__name__, cls.from_dict(item)),
-                        ACL_CLASSES))
+        acls = dict([(c.__name__, c.from_dict(item)) for c in ACL_CLASSES])
 
         return User(name, password, role_name, acls)
 
