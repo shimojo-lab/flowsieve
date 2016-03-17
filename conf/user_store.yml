@@ -11,6 +11,7 @@ users:
   - name: dev1
     role: Development
     password: TIS
+    service_default: allow
   - name: dev2
     role: Development
     password: TIS
