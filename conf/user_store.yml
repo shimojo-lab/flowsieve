@@ -1,90 +1,133 @@
+# Roles
 roles:
   - name: Development
-    family: true
   - name: Sales
-    family: true
   - name: Human Resources
+    family: False
   - name: General Affairs
+    default: deny
     family: true
 
+# Users
 users:
+  # Development Department
   - name: dev1
     role: Development
     password: TIS
-    default: allow
-    service_default: allow
+
   - name: dev2
     role: Development
     password: TIS
+
   - name: dev3
     role: Development
     password: TIS
+
   - name: dev_srv1
     role: Development
+    service_default: deny
     allowed_services:
       - tcp/80
       - tcp/443
       - tcp/22
     password: TIS
+
   - name: dev_srv2
     role: Development
+    default: deny
+    allowed_roles:
+      - Development
+    service_default: deny
     allowed_services:
       - udp/67
     password: TIS
+
   - name: dev_srv3
     role: Development
-    service_default: allow
+    default: deny
+    allowed_roles:
+      - Development
     password: TIS
 
+  # Sales Department
   - name: sal1
     role: Sales
     password: TIS
+
   - name: sal2
     role: Sales
     password: TIS
+
   - name: sal3
     role: Sales
     password: TIS
+
   - name: sal_srv1
     role: Sales
     password: TIS
+
   - name: sal_srv2
     role: Sales
+    default: deny
+    allowed_roles:
+      - Sales
+      - General Affairs
     password: TIS
 
+  # Human Resources Department
   - name: hr1
     role: Human Resources
     password: TIS
+
   - name: hr2
     role: Human Resources
     password: TIS
+
   - name: hr3
     role: Human Resources
     password: TIS
+
   - name: hr_srv1
     role: Human Resources
-    public: true
-    password: TIS
-  - name: hr_srv2
-    role: Human Resources
+    allowed_roles:
+      - Human Resources
     password: TIS
 
-  - name: ga1
-    role: General Affairs
-    password: TIS
-  - name: ga2
-    role: General Affairs
-    password: TIS
-  - name: ga3
-    role: General Affairs
-    password: TIS
-  - name: ga_srv1
-    role: General Affairs
-    deafult: allow
-    public: true
+  - name: hr_srv2
+    role: Human Resources
+    allowed_roles:
+      - Human Resources
+    service_default: deny
     allowed_services:
       - tcp/80
       - tcp/443
       - tcp/139
       - tcp/445
+    password: TIS
+
+  # General Affairs Department
+  - name: ga1
+    role: General Affairs
+    password: TIS
+
+  - name: ga2
+    role: General Affairs
+    password: TIS
+
+  - name: ga3
+    role: General Affairs
+    password: TIS
+
+  - name: ga_srv1
+    role: General Affairs
+    default: allow
+    service_default: deny
+    allowed_services:
+      - tcp/110
+      - tcp/143
+      - tcp/25
+      - tcp/587
+      - tcp/995
+      - tcp/993
+      - tcp/465
     password: TIS
