@@ -1,6 +1,6 @@
 import logging
 
-from ryu.lib.packet import ipv4, tcp, udp
+from ryu.lib.packet import ethernet, ipv4, tcp, udp
 from ryu.lib.packet.ether_types import ETH_TYPE_IP
 from ryu.lib.packet.in_proto import IPPROTO_TCP, IPPROTO_UDP
 
@@ -43,13 +43,17 @@ class ServiceACL(BaseACL):
         if pkt is None:
             return ACLResult(src_user in self.service_set, PacketMatch())
 
+        eth = pkt.get_protocol(ethernet.ethernet)
         iph = pkt.get_protocol(ipv4.ipv4)
         tcph = pkt.get_protocol(tcp.tcp)
         udph = pkt.get_protocol(udp.udp)
 
         # This is not a TCP/IP packet
-        if iph is None or (tcph is None and udph is None):
-            return ACLResult(True)
+        if iph is None:
+            return ACLResult(True, PacketMatch(dl_type=eth.ethertype))
+        elif tcph is None and udph is None:
+            return ACLResult(True, PacketMatch(dl_type=ETH_TYPE_IP,
+                                               nw_proto=iph.proto))
 
         match = PacketMatch(dl_type=ETH_TYPE_IP)
 
