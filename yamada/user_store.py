@@ -11,10 +11,17 @@ ACL_CLASSES = [UserACL, ServiceACL]
 class UserStore(object):
     DEFAULT_USER_ROLE_FILE = "conf/user_store.yml"
 
-    def __init__(self, file_name=None):
+    _instances = {}
+
+    @classmethod
+    def get_instance(cls, file_name=DEFAULT_USER_ROLE_FILE):
+        if file_name not in cls._instances:
+            cls._instances[file_name] = cls(file_name)
+
+        return cls._instances[file_name]
+
+    def __init__(self, file_name=DEFAULT_USER_ROLE_FILE):
         super(UserStore, self).__init__()
-        if file_name is None:
-            file_name = UserStore.DEFAULT_USER_ROLE_FILE
         self.user_role_file = file_name
         self.users = {}
         self.roles = {}

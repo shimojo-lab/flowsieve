@@ -12,8 +12,9 @@ from ryu.lib.packet import ethernet, packet
 
 from transitions import Machine
 
-from yamada import eap_events, events, user_store
+from yamada import eap_events, events
 from yamada.packet import eap, eapol
+from yamada.user_store import UserStore
 
 
 class EAPMD5Context(object):
@@ -68,7 +69,7 @@ class EAPMD5Method(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(EAPMD5Method, self).__init__(*args, **kwargs)
         self._contexts = {}
-        self._user_store = user_store.UserStore()
+        self._user_store = UserStore.get_instance()
 
     @set_ev_cls(eap_events.EventStartEAPOL)
     def _event_start_eap_handler(self, ev):

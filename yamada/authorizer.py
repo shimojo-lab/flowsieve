@@ -13,10 +13,11 @@ from ryu.controller.handler import set_ev_cls
 from ryu.lib.mac import BROADCAST_STR
 from ryu.lib.packet import ethernet, packet
 
-from yamada import events, user_store
+from yamada import events
 from yamada.acl.acl_result import ACLResult
 from yamada.packet.eapol import ETH_TYPE_EAPOL
 from yamada.secure_switch import SecureSwitch
+from yamada.user_store import UserStore
 
 from yaml import YAMLError, load
 
@@ -29,7 +30,7 @@ class Authorizer(app_manager.RyuApp):
         super(Authorizer, self).__init__(*args, **kwargs)
         self._mac_to_users = {}
         self._authenticated_ports = set()
-        self._user_store = user_store.UserStore()
+        self._user_store = UserStore.get_instance()
         self._topology = Topology()
 
     def _get_user_by_mac(self, mac):
