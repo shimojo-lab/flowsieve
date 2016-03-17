@@ -23,14 +23,12 @@ class UserACL(BaseACL):
         self.user_set = EMPTY_USER_SET
 
     def set_default(self):
-        if self.user is None and self.role is None:
-            self._logger.warning("ACL is associated to an unknown object")
+        if self.default != "":
+            return
+        elif self.parent is None:
             self.default = "deny"
-        elif self.default == "":
-            if self.user is not None:
-                self.default = "inherit"
-            elif self.role is not None:
-                self.default = "deny"
+        else:
+            self.default = "inherit"
 
     def load_relations(self, user_store):
         self.set_default()
@@ -41,7 +39,6 @@ class UserACL(BaseACL):
                 self._logger.warning("Unknwon user %s in section"
                                      " allowed_users of an ACL", user_name)
                 continue
-
             self.allowed_users.append(user)
 
         for role_name in self.allowed_role_names:
@@ -82,12 +79,17 @@ class UserACL(BaseACL):
             if self.parent is not None:
                 self.parent.build_user_set()
                 self.user_set = self.parent.user_set
+        else:
+            self._logger.warning("Unknown default value %s", self.default)
 
         if self.user is not None:
             self.user_set += UserSet(users=[self.user])
 
-        if self.is_family and self.role is not None:
-            self.user_set += UserSet(roles=[self.role])
+        if self.is_family:
+            if self.user is not None and self.user.role is not None:
+                self.user_set += UserSet(roles=[self.user.role])
+            elif self.role is not None:
+                self.user_set += UserSet(roles=[self.role])
 
         if self.is_public:
             self.user_set = WHOLE_USER_SET
