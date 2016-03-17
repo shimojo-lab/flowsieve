@@ -24,7 +24,7 @@ def generate_xsupplicant_conf(host):
     if_name = host.name + "-eth0"
     conf = tpl_conf.render({"if_name": if_name,
                             "mac_addr": host.MAC(if_name).replace(":", "-")})
-    host.cmd("echo '%s' > /etc/xsupplicant.conf" % conf)
+    host.cmd("echo '%s' > /etc/xsupplicant/xsupplicant.conf" % conf)
 
 
 def generate_xsupplicant_user_conf(host):
@@ -139,8 +139,7 @@ class YamadaTopo(Topo):
 def launch_network():
     "Create and test a simple network"
     topo = YamadaTopo()
-    private_dirs = ["/tmp", "/etc", ("/var/log", "/var/%(name)s/log"),
-                    "/var/run"]
+    private_dirs = ["/tmp", "/etc/xsupplicant", "/var/log", "/var/run"]
     host = partial(Host, privateDirs=private_dirs)
     net = Mininet(topo=topo, host=host, controller=RemoteController)
     net.start()
@@ -148,7 +147,7 @@ def launch_network():
     for host in net.hosts:
         generate_xsupplicant_conf(host)
         generate_xsupplicant_user_conf(host)
-        host.cmd("xsupplicant -d A")
+        host.cmd("xsupplicant -d A -c /etc/xsupplicant/xsupplicant.conf")
 
     for host in net.hosts:
         execute_connect_tool(host)
