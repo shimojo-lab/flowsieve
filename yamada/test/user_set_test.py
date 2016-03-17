@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from nose.tools import ok_
 
-from yamada.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
+from yamada.acl.user_set import UserSet
 from yamada.user_store import Role, User
 
 
@@ -26,20 +26,20 @@ class UserSetTestCase(TestCase):
         self.user6.role = self.role3
 
     def test_empty_set(self):
-        ok_(self.user1 not in EMPTY_USER_SET)
-        ok_(self.user2 not in EMPTY_USER_SET)
-        ok_(self.user3 not in EMPTY_USER_SET)
-        ok_(self.user4 not in EMPTY_USER_SET)
-        ok_(self.user5 not in EMPTY_USER_SET)
-        ok_(self.user6 not in EMPTY_USER_SET)
+        ok_(self.user1 not in UserSet.empty())
+        ok_(self.user2 not in UserSet.empty())
+        ok_(self.user3 not in UserSet.empty())
+        ok_(self.user4 not in UserSet.empty())
+        ok_(self.user5 not in UserSet.empty())
+        ok_(self.user6 not in UserSet.empty())
 
     def test_whole_set(self):
-        ok_(self.user1 in WHOLE_USER_SET)
-        ok_(self.user2 in WHOLE_USER_SET)
-        ok_(self.user3 in WHOLE_USER_SET)
-        ok_(self.user4 in WHOLE_USER_SET)
-        ok_(self.user5 in WHOLE_USER_SET)
-        ok_(self.user6 in WHOLE_USER_SET)
+        ok_(self.user1 in UserSet.whole())
+        ok_(self.user2 in UserSet.whole())
+        ok_(self.user3 in UserSet.whole())
+        ok_(self.user4 in UserSet.whole())
+        ok_(self.user5 in UserSet.whole())
+        ok_(self.user6 in UserSet.whole())
 
     def test_users_initializer(self):
         user_set = UserSet(users=[self.user1, self.user2, self.user3])

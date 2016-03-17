@@ -2,7 +2,7 @@ from ryu.lib.packet import ethernet
 
 from yamada.acl.acl_result import ACLResult, PacketMatch
 from yamada.acl.base_acl import BaseACL
-from yamada.acl.user_set import EMPTY_USER_SET, UserSet, WHOLE_USER_SET
+from yamada.acl.user_set import UserSet
 
 
 class UserACL(BaseACL):
@@ -20,7 +20,7 @@ class UserACL(BaseACL):
         self.is_public = kwargs.get("public", False)
         self.default = kwargs.get("default", "")
 
-        self.user_set = EMPTY_USER_SET
+        self.user_set = UserSet.empty()
 
     def set_default(self):
         if self.default != "":
@@ -68,17 +68,16 @@ class UserACL(BaseACL):
         self.build_user_set()
 
     def build_user_set(self):
-        self.user_set = EMPTY_USER_SET
+        self.user_set = UserSet.empty()
 
         default_str_low = self.default.lower()
         if default_str_low == "deny":
-            self.user_set = EMPTY_USER_SET
+            self.user_set = UserSet.empty()
         elif default_str_low == "allow":
-            self.user_set = WHOLE_USER_SET
-        elif default_str_low == "inherit":
-            if self.parent is not None:
-                self.parent.build_user_set()
-                self.user_set = self.parent.user_set
+            self.user_set = UserSet.whole()
+        elif default_str_low == "inherit" and self.parent is not None:
+            self.parent.build_user_set()
+            self.user_set = self.parent.user_set
         else:
             self._logger.warning("Unknown default value %s", self.default)
 
@@ -92,7 +91,7 @@ class UserACL(BaseACL):
                 self.user_set += UserSet(roles=[self.role])
 
         if self.is_public:
-            self.user_set = WHOLE_USER_SET
+            self.user_set = UserSet.whole()
 
         self.user_set += UserSet(users=self.allowed_users)
         self.user_set += UserSet(roles=self.allowed_roles)
