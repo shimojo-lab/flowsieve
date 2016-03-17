@@ -5,6 +5,7 @@ roles:
     family: true
   - name: Human Resources
   - name: General Affairs
+    family: true
 
 users:
   - name: dev1
@@ -18,12 +19,19 @@ users:
     password: TIS
   - name: dev_srv1
     role: Development
+    allowed_services:
+      - tcp/80
+      - tcp/443
+      - tcp/22
     password: TIS
   - name: dev_srv2
     role: Development
+    allowed_services:
+      - udp/67
     password: TIS
   - name: dev_srv3
     role: Development
+    service_default: allow
     password: TIS
 
   - name: sal1
@@ -70,5 +78,10 @@ users:
     password: TIS
   - name: ga_srv1
     role: General Affairs
-    public: true
+    deafult: allow
+    allowed_services:
+      - tcp/80
+      - tcp/443
+      - tcp/139
+      - tcp/445
     password: TIS

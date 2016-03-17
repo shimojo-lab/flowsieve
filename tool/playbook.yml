@@ -17,6 +17,8 @@
         - mininet
         - python-pip
         - python2.7-dev
+        - nmap
+        - netcat
     - name: Download mnexec
       get_url: url={{ mnexec_url }}
                sha256sum={{ mnexec_sha }}
