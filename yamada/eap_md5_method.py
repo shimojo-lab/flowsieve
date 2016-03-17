@@ -7,14 +7,12 @@ import md5
 import struct
 
 from ryu.base import app_manager
-from ryu.controller import ofp_event
-from ryu.controller.handler import DEAD_DISPATCHER, set_ev_cls
-from ryu.lib.mac import BROADCAST_STR
+from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import ethernet, packet
 
 from transitions import Machine
 
-from yamada import eap_events, user_store
+from yamada import eap_events, events, user_store
 from yamada.packet import eap, eapol
 
 
@@ -64,13 +62,12 @@ class EAPMD5Context(object):
 class EAPMD5Method(app_manager.RyuApp):
     """EAP-MD5 authentication method implementation
     """
-    _EVENTS = [eap_events.EventOutputEAPOL, eap_events.EventPortAuthorized,
-               eap_events.EventPortLoggedOff]
+    _EVENTS = [eap_events.EventOutputEAPOL, events.EventPortAuthorized,
+               events.EventPortLoggedOff]
 
     def __init__(self, *args, **kwargs):
         super(EAPMD5Method, self).__init__(*args, **kwargs)
         self._contexts = {}
-        self._mac_to_contexts = {}
         self._user_store = user_store.UserStore()
 
     @set_ev_cls(eap_events.EventStartEAPOL)
@@ -82,7 +79,6 @@ class EAPMD5Method(app_manager.RyuApp):
             ctx = EAPMD5Context(ev.dpid, ev.port, ev.src, ev.dst)
 
             self._contexts[(ev.dpid, ev.port)] = ctx
-            self._mac_to_contexts[ev.src] = ctx
 
         ctx = self._contexts.get((ev.dpid, ev.port))
 
@@ -111,11 +107,10 @@ class EAPMD5Method(app_manager.RyuApp):
             return
 
         ctx.logoff()
-        if ctx.host_mac in self._mac_to_contexts:
-            del self._mac_to_contexts[ctx.host_mac]
 
         self.send_event_to_observers(
-            eap_events.EventPortLoggedOff(ev.dpid, ev.port)
+            events.EventPortLoggedOff(ev.dpid, ev.port, ctx.host_mac,
+                                      ctx.identity)
         )
 
     @set_ev_cls(eap_events.EventStartEAPMD5Challenge)
@@ -165,7 +160,8 @@ class EAPMD5Method(app_manager.RyuApp):
             code = eap.EAP_CODE_SUCCESS
             ctx.logon()
             self.send_event_to_observers(
-                eap_events.EventPortAuthorized(ev.dpid, ev.port)
+                events.EventPortAuthorized(ev.dpid, ev.port, ctx.host_mac,
+                                           ctx.identity)
             )
         else:
             code = eap.EAP_CODE_FAILURE
@@ -192,47 +188,3 @@ class EAPMD5Method(app_manager.RyuApp):
         m.update(challenge)
 
         return m.digest() == response
-
-    def _get_user_by_mac(self, mac):
-        """Get user object by source MAC address"""
-        if mac not in self._mac_to_contexts:
-            return None
-
-        user_name = self._mac_to_contexts[mac].identity
-
-        return self._user_store.get_user(user_name)
-
-    @set_ev_cls(eap_events.AuthorizeRequest)
-    def _authorize_request_handler(self, req):
-        pkt = packet.Packet(req.msg.data)
-        eth = pkt.get_protocol(ethernet.ethernet)
-        src = eth.src
-        dst = eth.dst
-
-        src_user = self._get_user_by_mac(src)
-        dst_user = self._get_user_by_mac(dst)
-
-        result = False
-
-        if src_user is not None and dst_user is not None:
-            result = dst_user.allows_user(src_user)
-
-        if dst == BROADCAST_STR:
-            result = True
-
-        reply = eap_events.AuthorizeReply(req.dst, result)
-        self.reply_to_request(req, reply)
-
-    @set_ev_cls(ofp_event.EventOFPStateChange, DEAD_DISPATCHER)
-    def _state_change_handler(self, ev):
-        dp = ev.datapath
-        if dp.id is None:
-            return
-
-        for ctx in self._contexts.values():
-            if ctx.dpid == dp.id:
-                del self._contexts[(ctx.dpid, ctx.port)]
-
-        for ctx in self._mac_to_contexts.values():
-            if ctx.dpid == dp.id:
-                del self._contexts[ctx.host_mac]

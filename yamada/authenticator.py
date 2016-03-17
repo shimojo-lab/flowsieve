@@ -10,7 +10,9 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
 
-from yamada import eap_events, eap_md5_method, secure_switch
+from yamada import (
+    authorizer, eap_events, eap_md5_method, events, secure_switch
+)
 from yamada.packet import eap, eapol
 
 
@@ -25,6 +27,7 @@ class Authenticator(app_manager.RyuApp):
         "dpset": dpset.DPSet,
         "secure_switch": secure_switch.SecureSwitch,
         "eap_md5_method": eap_md5_method.EAPMD5Method,
+        "authorizer": authorizer.Authorizer,
     }
 
     _COOKIE_AUTHENTICATOR = 0xf000
@@ -182,7 +185,7 @@ class Authenticator(app_manager.RyuApp):
             data=ev.pkt.data)
         dp.send_msg(out)
 
-    @set_ev_cls(eap_events.EventPortAuthorized)
+    @set_ev_cls(events.EventPortAuthorized)
     def _event_port_authorized_handler(self, ev):
         dp = self._dps.get(ev.dpid)
         if dp is None:
@@ -196,7 +199,7 @@ class Authenticator(app_manager.RyuApp):
             command=ofproto.OFPFC_DELETE)
         dp.send_msg(mod)
 
-    @set_ev_cls(eap_events.EventPortLoggedOff)
+    @set_ev_cls(events.EventPortLoggedOff)
     def _event_port_loggedoff_handler(self, ev):
         dp = self._dps.get(ev.dpid)
         if dp is None:
