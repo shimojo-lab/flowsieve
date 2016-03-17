@@ -12,13 +12,17 @@ class UserACL(BaseACL):
         self.allowed_users = []
         self.allowed_role_names = kwargs.get("allowed_roles", [])
         self.allowed_roles = []
+        self.denied_user_names = kwargs.get("denied_users", [])
+        self.denied_users = []
+        self.denied_role_names = kwargs.get("denied_roles", [])
+        self.denied_roles = []
         self.is_family = kwargs.get("family", False)
         self.is_public = kwargs.get("public", False)
         self.default = kwargs.get("default", "")
 
         self.user_set = EMPTY_USER_SET
 
-    def load_relations(self, user_store):
+    def set_default(self):
         if self.user is None and self.role is None:
             self._logger.warning("ACL is associated to an unknown object")
             self.default = "deny"
@@ -27,6 +31,9 @@ class UserACL(BaseACL):
                 self.default = "inherit"
             elif self.role is not None:
                 self.default = "deny"
+
+    def load_relations(self, user_store):
+        self.set_default()
 
         for user_name in self.allowed_user_names:
             user = user_store.get_user(user_name)
@@ -44,6 +51,22 @@ class UserACL(BaseACL):
                                      " allowed_roles of an ACL", role_name)
                 continue
             self.allowed_roles.append(role)
+
+        for user_name in self.denied_user_names:
+            user = user_store.get_user(user_name)
+            if user is None:
+                self._logger.warning("Unknwon user %s in section"
+                                     " denied_users of an ACL", user_name)
+                continue
+            self.denied_users.append(user)
+
+        for role_name in self.denied_role_names:
+            role = user_store.get_role(role_name)
+            if role is None:
+                self._logger.warning("Unknown role %s in section"
+                                     " denied_roles of an ACL", role_name)
+                continue
+            self.denied_roles.append(role)
 
         self.build_user_set()
 
@@ -71,6 +94,8 @@ class UserACL(BaseACL):
 
         self.user_set += UserSet(users=self.allowed_users)
         self.user_set += UserSet(roles=self.allowed_roles)
+        self.user_set -= UserSet(users=self.denied_users)
+        self.user_set -= UserSet(roles=self.denied_roles)
 
     def allows_packet(self, pkt, src_user):
         if pkt is None:
