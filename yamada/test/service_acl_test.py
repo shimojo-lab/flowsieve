@@ -22,7 +22,8 @@ class ServiceACLTestCase(TestCase):
         return pkt
 
     def test_allowed_services(self):
-        acl = ServiceACL(allowed_services=["tcp/80", "udp/53"])
+        acl = ServiceACL(service_default="deny",
+                         allowed_services=["tcp/80", "udp/53"])
         acl.build_service_set()
 
         pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=80)
@@ -79,3 +80,16 @@ class ServiceACLTestCase(TestCase):
 
         pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=514)
         ok_(not acl.allows_packet(pkt, None))
+
+    def test_invalid_default(self):
+        acl = ServiceACL(service_default="deni")
+        acl.build_service_set()
+
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=25)
+        ok_(acl.allows_packet(pkt, None))
+
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=110)
+        ok_(acl.allows_packet(pkt, None))
+
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=123)
+        ok_(acl.allows_packet(pkt, None))
