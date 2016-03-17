@@ -1,5 +1,5 @@
 class BaseSet(object):
-    """Represents a set of services"""
+    """Represents a set of items"""
     def __init__(self, predicate):
         super(BaseSet, self).__init__()
         self.predicate = predicate

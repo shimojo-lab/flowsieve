@@ -1,10 +1,11 @@
 import logging
 
+from yamada.acl.service_acl import ServiceACL
 from yamada.acl.user_acl import UserACL
 
 from yaml import YAMLError, load
 
-ACL_CLASSES = [UserACL]
+ACL_CLASSES = [UserACL, ServiceACL]
 
 
 class UserStore(object):
