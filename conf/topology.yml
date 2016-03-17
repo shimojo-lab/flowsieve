@@ -1,0 +1,19 @@
+switches:
+  - dpid: 1
+    trusted_ports:
+      - 1
+      - 2
+      - 3
+      - 4
+  - dpid: 2
+    trusted_ports:
+      - 1
+  - dpid: 3
+    trusted_ports:
+      - 1
+  - dpid: 4
+    trusted_ports:
+      - 1
+  - dpid: 5
+    trusted_ports:
+      - 1

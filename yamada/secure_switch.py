@@ -36,9 +36,9 @@ class SecureSwitch(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_0.OFP_VERSION]
     _EVENTS = [events.AuthorizeRequest]
 
-    _COOKIE_SECURE_SWITCH = 0xf100
-    _COOKIE_FORWARD = _COOKIE_SECURE_SWITCH | 0x01
-    _COOKIE_DROP = _COOKIE_SECURE_SWITCH | 0x02
+    COOKIE_SECURE_SWITCH = 0xf100
+    COOKIE_FORWARD = COOKIE_SECURE_SWITCH | 0x01
+    COOKIE_DROP = COOKIE_SECURE_SWITCH | 0x02
 
     def __init__(self, *args, **kwargs):
         super(SecureSwitch, self).__init__(*args, **kwargs)
@@ -49,7 +49,7 @@ class SecureSwitch(app_manager.RyuApp):
 
         mod = datapath.ofproto_parser.OFPFlowMod(
             datapath=datapath, match=match,
-            cookie=SecureSwitch._COOKIE_FORWARD,
+            cookie=SecureSwitch.COOKIE_FORWARD,
             command=ofproto.OFPFC_ADD, idle_timeout=60, hard_timeout=0,
             priority=ofproto.OFP_DEFAULT_PRIORITY,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=actions)
@@ -60,7 +60,7 @@ class SecureSwitch(app_manager.RyuApp):
 
         mod = datapath.ofproto_parser.OFPFlowMod(
             datapath=datapath, match=match,
-            cookie=SecureSwitch._COOKIE_SECURE_SWITCH,
+            cookie=SecureSwitch.COOKIE_SECURE_SWITCH,
             command=ofproto.OFPFC_ADD, idle_timeout=60, hard_timeout=0,
             priority=ofproto.OFP_DEFAULT_PRIORITY,
             flags=ofproto.OFPFF_SEND_FLOW_REM, actions=[])
@@ -98,8 +98,6 @@ class SecureSwitch(app_manager.RyuApp):
         else:
             self.logger.warning("Access denied: %s -> %s", src, dst)
             result += ACLResult(True, PacketMatch(dl_dst=dst))
-            self._install_ephemeral_drop_flow(
-                datapath, result.match.to_ofp_match())
             return
 
         # learn a mac address to avoid FLOOD next time.
