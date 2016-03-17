@@ -16,8 +16,7 @@ class UserACL(BaseACL):
         self.denied_users = []
         self.denied_role_names = kwargs.get("denied_roles", [])
         self.denied_roles = []
-        self.is_family = kwargs.get("family", False)
-        self.is_public = kwargs.get("public", False)
+        self.is_family = kwargs.get("family", True)
         self.default = kwargs.get("default", "")
 
         self.user_set = UserSet.empty()
@@ -26,7 +25,7 @@ class UserACL(BaseACL):
         if self.default != "":
             return
         elif self.parent is None:
-            self.default = "deny"
+            self.default = "allow"
         else:
             self.default = "inherit"
 
@@ -68,7 +67,7 @@ class UserACL(BaseACL):
         self.build_user_set()
 
     def build_user_set(self):
-        self.user_set = UserSet.empty()
+        self.user_set = UserSet.whole()
 
         default_str_low = self.default.lower()
         if default_str_low == "deny":
@@ -90,9 +89,6 @@ class UserACL(BaseACL):
             elif self.role is not None:
                 self.user_set += UserSet(roles=[self.role])
 
-        if self.is_public:
-            self.user_set = UserSet.whole()
-
         self.user_set += UserSet(users=self.allowed_users)
         self.user_set += UserSet(roles=self.allowed_roles)
         self.user_set -= UserSet(users=self.denied_users)
@@ -110,10 +106,7 @@ class UserACL(BaseACL):
         repr_family = ""
         if self.is_family:
             repr_family = " family"
-        repr_public = ""
-        if self.is_public:
-            repr_public = " public"
 
         return "<UserACL{0}{1} allowed_users={2}>".format(
-            repr_family, repr_public, self.allowed_user_names
+            repr_family, self.allowed_user_names
         )

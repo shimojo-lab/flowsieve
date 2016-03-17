@@ -18,14 +18,14 @@ class ServiceACL(BaseACL):
         self.denied_services = [s for s in [
             Service.from_str(s) for s in kwargs.get("denied_services", [])]
             if s is not None]
-        self.default = kwargs.get("service_default", "deny")
+        self.default = kwargs.get("service_default", "allow")
         self.service_set = ServiceSet.empty()
 
     def load_relations(self, user_store):
         self.build_service_set()
 
     def build_service_set(self):
-        self.service_set = ServiceSet.empty()
+        self.service_set = ServiceSet.whole()
 
         default_str_low = self.default.lower()
         if default_str_low == "deny":
@@ -33,8 +33,11 @@ class ServiceACL(BaseACL):
         elif default_str_low == "allow":
             self.service_set = ServiceSet.whole()
         elif default_str_low == "inherit" and self.parent is not None:
-                self.parent.build_service_set()
-                self.service_set = self.parent.service_set
+            self.parent.build_service_set()
+            self.service_set = self.parent.service_set
+        else:
+            self._logger.warning("Unknown service_default value %s",
+                                 self.default)
 
         self.service_set += ServiceSet(services=self.allowed_services)
         self.service_set -= ServiceSet(services=self.denied_services)
