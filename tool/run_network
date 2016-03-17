@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import os
 import sys
-import time
 
 from functools import partial
 
@@ -15,30 +14,35 @@ from mininet.topo import Topo
 from mininet.util import dumpNodeConnections
 
 
+TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "template")
+
+
 def generate_xsupplicant_conf(host):
-    env = Environment(loader=FileSystemLoader("/vagrant/tool/template/"))
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     tpl_conf = env.get_template("xsupplicant.tpl.conf")
 
     if_name = host.name + "-eth0"
-    conf = tpl_conf.render({"if_name": if_name,
+    conf = tpl_conf.render({"if_name": "eth0",
                             "mac_addr": host.MAC(if_name).replace(":", "-")})
-    host.cmd("echo '%s' > /etc/xsupplicant.conf" % conf)
+    host.cmd("echo '%s' > /etc/xsupplicant/xsupplicant.conf" % conf)
 
 
-def generate_xsupplicant_user_conf(host):
+def generate_xsupplicant_user_conf():
     sys.path.append(
         os.path.abspath(
             os.path.join(
                 os.path.abspath(os.path.dirname(__file__)), "..")))
     from yamada.user_store import UserStore
 
-    env = Environment(loader=FileSystemLoader("/vagrant/tool/template/"))
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     tpl_user_conf = env.get_template("xsupplicant.tpl.user.conf")
-    if_name = host.name + "-eth0"
     profiles = UserStore().users.values()
-    user_conf = tpl_user_conf.render({"if_name": if_name,
+    user_conf = tpl_user_conf.render({"if_name": "eth0",
                                       "profiles": profiles})
-    host.cmd("echo '%s' > /etc/xsupplicant.user.conf " % user_conf)
+
+    f = open("/etc/xsupplicant.user.conf", "w")
+    f.write(user_conf)
+    f.close()
 
 
 def execute_connect_tool(host):
@@ -137,16 +141,16 @@ class YamadaTopo(Topo):
 def launch_network():
     "Create and test a simple network"
     topo = YamadaTopo()
-    private_dirs = ["/tmp", "/etc", ("/var/log", "/var/%(name)s/log"),
-                    "/var/run"]
+    private_dirs = ["/tmp", "/etc/xsupplicant", "/var/log", "/var/run"]
     host = partial(Host, privateDirs=private_dirs)
     net = Mininet(topo=topo, host=host, controller=RemoteController)
     net.start()
 
+    generate_xsupplicant_user_conf()
+
     for host in net.hosts:
         generate_xsupplicant_conf(host)
-        generate_xsupplicant_user_conf(host)
-        host.cmd("xsupplicant -d A")
+        host.cmd("xsupplicant -d A -c /etc/xsupplicant/xsupplicant.conf")
 
     for host in net.hosts:
         execute_connect_tool(host)
