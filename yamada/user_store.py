@@ -106,6 +106,9 @@ class Role(object):
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
 
+    def __hash__(self):
+        return hash(self.name)
+
     def load_relations(self, user_store):
         for acl in self.acls.itervalues():
             acl.role = self
@@ -145,6 +148,9 @@ class User(object):
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
 
     def load_relations(self, user_store):
         role = user_store.get_role(self.role_name)

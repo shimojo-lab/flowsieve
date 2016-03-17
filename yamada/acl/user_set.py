@@ -7,7 +7,9 @@ class UserSet(BaseSet):
         assert isinstance(users, list) or isinstance(users, set)
         assert isinstance(roles, list) or isinstance(roles, set)
 
+        users = set(users)
+        roles = set(roles)
+
         super(UserSet, self).__init__(
-            lambda u: any([u == v for v in users]) or
-            any([u.role == r for r in roles]) or predicate(u)
+            lambda u: u in users or u.role in roles or predicate(u)
         )

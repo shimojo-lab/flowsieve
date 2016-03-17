@@ -105,5 +105,8 @@ class Service(object):
     def __eq__(self, other):
         return self.proto == other.proto and self.port == other.port
 
+    def __hash__(self):
+        return hash((self.proto, self.port))
+
     def __repr__(self):
         return "<Service {0}/{1}>".format(self.proto, self.port)
