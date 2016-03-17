@@ -49,8 +49,7 @@ class UserStore(object):
             self._logger.error("Could not open %s", self.user_role_file)
             return
         except YAMLError:
-            self._logger.warning("Error while parsing %s",
-                                 self.user_role_file)
+            self._logger.error("Error while parsing %s", self.user_role_file)
             return
 
         if "roles" in data:

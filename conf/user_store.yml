@@ -11,6 +11,7 @@ users:
   - name: dev1
     role: Development
     password: TIS
+    default: allow
     service_default: allow
   - name: dev2
     role: Development
@@ -80,6 +81,7 @@ users:
   - name: ga_srv1
     role: General Affairs
     deafult: allow
+    public: true
     allowed_services:
       - tcp/80
       - tcp/443
