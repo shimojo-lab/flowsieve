@@ -3,13 +3,13 @@
 [![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/yamada-ofcontroller/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/yamada-ofcontroller)
 
 OpenFlow controller for the "Network access control based on role-base security
-policy" project.
+policy" project
 
 ## Vagrant & Mininet
 
 In this setup, we simulate the whole network using Mininet. Since Mininet
 requires Linux  as the operating system, we use vagrant to start and provision
-a VM.  We use Ansible to provision the VM. This is the recommended way for
+a Linux VM.  We use Ansible to provision the VM. This is the recommended way for
 development.
 
 ### Configuration
@@ -22,7 +22,7 @@ development.
 
 ### Execution
 
-All commands shall be executed inside the VM.
+All commands below shall be executed inside the VM.
 
 1. `cd /vagrant`
 2. `./tool/run_controller` (The controller will run in the foreground, so open
@@ -32,9 +32,9 @@ All commands shall be executed inside the VM.
 ## Open vSwitch & KVM or Physical OpenFlow switch and physical server
 
 In this setup, we construct the network using virtual machines/switches or
-physical machines/switches. We execute the OpenFlow controller in an isolated
-environment using direnv and virtualenv. This is the recommended method for
-evaluation.
+physical machines/switches. Then, we execute the OpenFlow controller in an
+isolated environment using direnv and virtualenv. This is the recommended method
+for evaluation.
 
 ### Configuration
 
