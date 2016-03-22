@@ -1,6 +1,6 @@
-# yamada-ofcontroller
+# yamada-ofcontroller [![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/yamada-ofcontroller/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/yamada-ofcontroller)
 
-[![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/yamada-ofcontroller/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/yamada-ofcontroller)
+---
 
 OpenFlow controller for the "Network access control based on role-base security
 policy" project
