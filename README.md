@@ -46,3 +46,9 @@ VagrantによりUbuntuのVMを起動し、Ansibleで必要なコンポーネン�
 2. `./tool/run_controller` (フォアグラウンドで実行するので以下は別セッション)
 3. `sudo ./tool/run_network`
 
+---
+
+This software is released under the Apache 2.0 License. See LICENSE for the
+full license text. This software includes a part of a work that is distributed
+in the Apache 2.0 License.
+
