@@ -42,12 +42,12 @@ class UserStore(object):
     def del_user(self, user_name):
         assert isinstance(user_name, basestring)
 
-        del self.users[user_name]
+        self.users.pop(user_name)
 
     def del_role(self, role_name):
         assert isinstance(role_name, basestring)
 
-        del self.roles[role_name]
+        self.roles.pop(role_name)
 
     def _read_definition_file(self):
         try:

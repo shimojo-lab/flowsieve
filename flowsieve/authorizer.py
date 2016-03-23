@@ -150,6 +150,19 @@ class Authorizer(app_manager.RyuApp):
         reply = events.AuthorizeReply(req.dst, result)
         self.reply_to_request(req, reply)
 
+    @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
+    def _event_state_change(self, ev):
+        msg = ev.msg
+        ofproto = msg.datapath.ofproto
+        dpid = msg.datapath.id
+        port = msg.desc
+        reason = msg.reason
+
+        if reason == ofproto.OFPPR_DELETE or reason == ofproto.OFPPR_MODIFY \
+                and (msg.desc.state & ofproto.OFPPS_LINK_DOWN):
+                port_no = port.port_no
+                self._authenticated_ports.discard((dpid, port_no))
+
 
 class Topology(object):
     DEFAULT_TOPOLOGY_CONF_FILE = "conf/topology.yml"
@@ -163,11 +176,6 @@ class Topology(object):
         self.trusted_ports = set()
 
         self._read_config_file()
-
-    def get_user(self, user_name):
-        assert isinstance(user_name, basestring)
-
-        return self.users.get(user_name)
 
     def _read_config_file(self):
         try:
