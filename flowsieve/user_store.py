@@ -139,7 +139,8 @@ class Role(object):
         return Role(name, acls)
 
     def __repr__(self):
-        return "<Role name=\"{0}\" acl={1}>".format(self.name, self.acls.values())
+        return "<Role name=\"{0}\" acl={1}>".format(self.name,
+                                                    self.acls.values())
 
 
 class User(object):
