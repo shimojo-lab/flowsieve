@@ -1,3 +1,6 @@
+# Modifications copyright (C) 2016 Shimojo Laboratory, Osaka University
+# Based on https://github.com/osrg/ryu/blob/v4.0/ryu/app/simple_switch.py
+
 # Copyright (C) 2011 Nippon Telegraph and Telephone Corporation.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

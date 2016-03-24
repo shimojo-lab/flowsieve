@@ -51,3 +51,9 @@ for evaluation.
 
 1. Run `./tool/run_controller`
 
+---
+
+This software is released under the Apache 2.0 License. See LICENSE for the
+full license text. This software includes a part of a work that is distributed
+in the Apache 2.0 License.
+
