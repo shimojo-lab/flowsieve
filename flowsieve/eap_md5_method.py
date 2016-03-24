@@ -6,15 +6,15 @@ import logging
 import md5
 import struct
 
+from flowsieve import eap_events, events
+from flowsieve.packet import eap, eapol
+from flowsieve.user_store import UserStore
+
 from ryu.base import app_manager
 from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import ethernet, packet
 
 from transitions import Machine
-
-from flowsieve import eap_events, events
-from flowsieve.packet import eap, eapol
-from flowsieve.user_store import UserStore
 
 
 class EAPMD5Context(object):

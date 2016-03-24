@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from nose.tools import ok_
-
 from flowsieve.acl.user_set import UserSet
 from flowsieve.user_store import Role, User
+
+from nose.tools import ok_
 
 
 class UserSetTestCase(TestCase):

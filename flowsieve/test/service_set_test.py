@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from nose.tools import ok_
-
 from flowsieve.acl.service_acl import Service
 from flowsieve.acl.service_set import ServiceSet
+
+from nose.tools import ok_
 
 
 class ServiceSetTestCase(TestCase):

@@ -1,11 +1,11 @@
 from unittest import TestCase
 
+from flowsieve.acl.service_acl import ServiceACL
+
 from nose.tools import ok_
 
 from ryu.lib.packet import ethernet, ipv4, packet, tcp, udp
 from ryu.lib.packet.in_proto import IPPROTO_TCP, IPPROTO_UDP
-
-from flowsieve.acl.service_acl import ServiceACL
 
 
 class ServiceACLTestCase(TestCase):

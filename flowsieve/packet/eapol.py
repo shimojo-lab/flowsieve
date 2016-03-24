@@ -1,9 +1,9 @@
 import struct
 
+from flowsieve.packet.eap import eap
+
 from ryu.lib.packet import packet_base
 from ryu.lib.packet.ethernet import ethernet
-
-from flowsieve.packet.eap import eap
 
 ETH_TYPE_EAPOL = 0x888e
 EAPOL_TYPE_EAP = 0x00

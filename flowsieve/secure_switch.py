@@ -21,6 +21,10 @@ An L2 switch working in conjuction with Yamada Authenticator.
 """
 
 
+from flowsieve import events
+from flowsieve.acl.acl_result import ACLResult, PacketMatch
+from flowsieve.packet.eapol import ETH_TYPE_EAPOL
+
 from ryu.base import app_manager
 from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER
@@ -29,10 +33,6 @@ from ryu.lib.packet import ether_types
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
-
-from flowsieve import events
-from flowsieve.acl.acl_result import ACLResult, PacketMatch
-from flowsieve.packet.eapol import ETH_TYPE_EAPOL
 
 
 class SecureSwitch(app_manager.RyuApp):

@@ -2,6 +2,9 @@
 Yamada 802.1X Authenticator
 """
 
+from flowsieve import authorizer, eap_events, eap_md5_method, secure_switch
+from flowsieve.packet import eap, eapol
+
 from ryu.base import app_manager
 from ryu.controller import dpset, ofp_event
 from ryu.controller.handler import DEAD_DISPATCHER, MAIN_DISPATCHER
@@ -9,9 +12,6 @@ from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
-
-from flowsieve import authorizer, eap_events, eap_md5_method, secure_switch
-from flowsieve.packet import eap, eapol
 
 
 class Authenticator(app_manager.RyuApp):

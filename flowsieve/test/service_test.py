@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from nose.tools import eq_, ok_
-
 from flowsieve.acl.service_acl import Service, TP_PROTO_TCP, TP_PROTO_UDP
+
+from nose.tools import eq_, ok_
 
 
 class UserSetTestCase(TestCase):
