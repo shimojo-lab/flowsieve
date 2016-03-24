@@ -1,48 +1,53 @@
-# yamada-ofcontroller
+# yamada-ofcontroller [![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/yamada-ofcontroller/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/yamada-ofcontroller)
 
-[![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/yamada-ofcontroller/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/yamada-ofcontroller)
+---
 
-"ロールベースセキュリティポリシーを持つネットワーク"のためのOpenFlowコントローラ
+OpenFlow controller for the "Network access control based on role-base security
+policy" project
 
-## Open vSwitch + KVM or 物理OpenFlowスイッチ + 物理サーバ
+## Vagrant & Mininet
 
-実験用ネットワークは仮想マシン/仮想スイッチ、あるいは物理マシン/物理スイッチ
-を用いて手動で構築する。direnv + virtualenvにより物理マシン上に隔離環境をつくり
-、そこでコントローラを起動する。
+In this setup, we simulate the whole network using Mininet. Since Mininet
+requires Linux  as the operating system, we use vagrant to start and provision
+a Linux VM.  We use Ansible to provision the VM. This is the recommended way for
+development.
 
-### 環境設定
+### Configuration
 
-1. Python, pip, virtualenvをインストールする
-2. [direnv](https://github.com/direnv/direnv) をインストール・設定する
-3. このリポジトリをcloneし、ディレクトリ内に移動する
-4. `direnv allow`
-5. `pip install -r requirements.txt`
-6. 各OpenFlowスイッチがコントローラを実行するマシンのTCP/6633番ポートに接続
-  するように設定
-
-### 実行
-
-1. `./tool/run_controller`
-
-## Vagrant + mininet
-
-VagrantによりUbuntuのVMを起動し、Ansibleで必要なコンポーネントを一括で
-プロビジョニングする。VM内でmininetを起動し、仮想ネットワークをVM内に自動的に
-構築する。コントローラはVM内で実行する。
-
-### 環境設定
-
-1. [Vagrant](https://www.vagrantup.com/) と [Ansible](https://www.ansible.com/)
-  をインストールする
-2. このリポジトリをcloneし、`tool/` ディレクトリ内に移動する
-3. `vagrant up` (Ansibleによるプロビジョニングが実行される)
+1. Install [Vagrant](https://www.vagrantup.com/) and
+  [Ansible](https://www.ansible.com/).
+3. Clone this repository and move into the `tool/` directory.
+3. Run `vagrant up` to start and provision the VM.
 4. `vagrant ssh`
 
-### 実行
+### Execution
 
-以下は `vagrant ssh` でログインした仮想マシン内で実行する。
+All commands below shall be executed inside the VM.
 
 1. `cd /vagrant`
-2. `./tool/run_controller` (フォアグラウンドで実行するので以下は別セッション)
+2. `./tool/run_controller` (The controller will run in the foreground, so open
+  up a new session for the following commands)
 3. `sudo ./tool/run_network`
+
+## Open vSwitch & KVM or Physical OpenFlow switch and physical server
+
+In this setup, we construct the network using virtual machines/switches or
+physical machines/switches. Then, we execute the OpenFlow controller in an
+isolated environment using direnv and virtualenv. This is the recommended method
+for evaluation.
+
+### Configuration
+
+1. Install python, pip and virtualenv.
+2. Install and configure [direnv](https://github.com/direnv/direnv).
+3. Clone this repository and move into the source code directory.
+4. `direnv allow`
+5. `pip install -r requirements.txt`
+6. Configure each OpenFlow switch to connect to the TCP/6633 port of the
+  machine where the controller will be running.
+
+
+### Execution
+
+1. Run `./tool/run_controller`
 
