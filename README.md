@@ -1,4 +1,4 @@
-# flowsieve-ofcontroller [![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/flowsieve-ofcontroller/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/flowsieve-ofcontroller)
+# flowsieve [![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/flowsieve/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/flowsieve)
 
 ---
 
