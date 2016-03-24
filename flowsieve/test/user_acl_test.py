@@ -94,19 +94,17 @@ class UserACLTestCase(TestCase):
         ok_(not user1_acl.allows_packet(None, self.user2))
 
     def test_intra_role_communication(self):
-        user1_acl = UserACL(user=self.user1, default="deny",
-                            role=self.user1.role)
-        user1_acl.build_user_set()
+        allow_family_acl = UserACL(role=self.user1.role, default="deny")
+        allow_family_acl.build_user_set()
+        ok_(allow_family_acl.allows_packet(None, self.user2))
+        ok_(not allow_family_acl.allows_packet(None, self.user4))
 
-        ok_(user1_acl.allows_packet(None, self.user2))
-        ok_(not user1_acl.allows_packet(None, self.user4))
+        deny_family_acl = UserACL(default="deny",
+                                  role=self.user1.role, family=False)
+        deny_family_acl.build_user_set()
 
-        user2_acl = UserACL(user=self.user1, default="deny",
-                            role=self.user1.role, family=False)
-        user2_acl.build_user_set()
-
-        ok_(not user2_acl.allows_packet(None, self.user2))
-        ok_(not user2_acl.allows_packet(None, self.user4))
+        ok_(not deny_family_acl.allows_packet(None, self.user2))
+        ok_(not deny_family_acl.allows_packet(None, self.user4))
 
     def test_invalid_default(self):
         user1_acl = UserACL(user=self.user1, role=self.user1.role,
