@@ -32,7 +32,7 @@ def generate_xsupplicant_user_conf():
         os.path.abspath(
             os.path.join(
                 os.path.abspath(os.path.dirname(__file__)), "..")))
-    from yamada.user_store import UserStore
+    from flowsieve.user_store import UserStore
 
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     tpl_user_conf = env.get_template("xsupplicant.tpl.user.conf")

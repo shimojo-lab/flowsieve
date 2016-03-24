@@ -12,9 +12,9 @@ from ryu.lib.packet import ethernet, packet
 
 from transitions import Machine
 
-from yamada import eap_events, events
-from yamada.packet import eap, eapol
-from yamada.user_store import UserStore
+from flowsieve import eap_events, events
+from flowsieve.packet import eap, eapol
+from flowsieve.user_store import UserStore
 
 
 class EAPMD5Context(object):

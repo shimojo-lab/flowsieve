@@ -10,8 +10,8 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
 
-from yamada import authorizer, eap_events, eap_md5_method, secure_switch
-from yamada.packet import eap, eapol
+from flowsieve import authorizer, eap_events, eap_md5_method, secure_switch
+from flowsieve.packet import eap, eapol
 
 
 class Authenticator(app_manager.RyuApp):

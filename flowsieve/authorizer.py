@@ -13,11 +13,11 @@ from ryu.controller.handler import set_ev_cls
 from ryu.lib.mac import BROADCAST_STR
 from ryu.lib.packet import ethernet, packet
 
-from yamada import events
-from yamada.acl.acl_result import ACLResult
-from yamada.packet.eapol import ETH_TYPE_EAPOL
-from yamada.secure_switch import SecureSwitch
-from yamada.user_store import UserStore
+from flowsieve import events
+from flowsieve.acl.acl_result import ACLResult
+from flowsieve.packet.eapol import ETH_TYPE_EAPOL
+from flowsieve.secure_switch import SecureSwitch
+from flowsieve.user_store import UserStore
 
 from yaml import YAMLError, load
 

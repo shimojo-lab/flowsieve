@@ -2,8 +2,8 @@ from unittest import TestCase
 
 from nose.tools import ok_
 
-from yamada.acl.user_acl import UserACL
-from yamada.user_store import Role, User
+from flowsieve.acl.user_acl import UserACL
+from flowsieve.user_store import Role, User
 
 
 class UserACLTestCase(TestCase):

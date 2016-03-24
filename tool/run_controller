@@ -10,5 +10,5 @@ do
 done
 
 cd `dirname $0`/..
-ryu-manager yamada.authenticator --log-config-file=$LOG_CONFIG_FILE
+ryu-manager flowsieve.authenticator --log-config-file=$LOG_CONFIG_FILE
 

@@ -2,8 +2,8 @@ from unittest import TestCase
 
 from nose.tools import ok_
 
-from yamada.acl.service_acl import Service
-from yamada.acl.service_set import ServiceSet
+from flowsieve.acl.service_acl import Service
+from flowsieve.acl.service_set import ServiceSet
 
 
 class ServiceSetTestCase(TestCase):

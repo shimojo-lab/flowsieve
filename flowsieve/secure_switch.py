@@ -30,9 +30,9 @@ from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet
 from ryu.ofproto import ofproto_v1_0
 
-from yamada import events
-from yamada.acl.acl_result import ACLResult, PacketMatch
-from yamada.packet.eapol import ETH_TYPE_EAPOL
+from flowsieve import events
+from flowsieve.acl.acl_result import ACLResult, PacketMatch
+from flowsieve.packet.eapol import ETH_TYPE_EAPOL
 
 
 class SecureSwitch(app_manager.RyuApp):

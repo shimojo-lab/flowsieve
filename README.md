@@ -1,4 +1,4 @@
-# yamada-ofcontroller [![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/yamada-ofcontroller/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/yamada-ofcontroller)
+# flowsieve-ofcontroller [![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/flowsieve-ofcontroller/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/flowsieve-ofcontroller)
 
 ---
 

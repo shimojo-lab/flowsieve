@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from nose.tools import eq_, ok_
 
-from yamada.acl.service_acl import Service, TP_PROTO_TCP, TP_PROTO_UDP
+from flowsieve.acl.service_acl import Service, TP_PROTO_TCP, TP_PROTO_UDP
 
 
 class UserSetTestCase(TestCase):
