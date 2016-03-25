@@ -11,7 +11,8 @@ from flowsieve.packet import eap, eapol
 from flowsieve.user_store import UserStore
 
 from ryu.base import app_manager
-from ryu.controller.handler import set_ev_cls
+from ryu.controller import ofp_event
+from ryu.controller.handler import MAIN_DISPATCHER, set_ev_cls
 from ryu.lib.packet import ethernet, packet
 
 from transitions import Machine
@@ -178,6 +179,19 @@ class EAPMD5Method(app_manager.RyuApp):
         self.send_event_to_observers(
             eap_events.EventOutputEAPOL(ev.dpid, ev.port, resp)
         )
+
+    @set_ev_cls(ofp_event.EventOFPPortStatus, MAIN_DISPATCHER)
+    def _event_state_change(self, ev):
+        msg = ev.msg
+        ofproto = msg.datapath.ofproto
+        dpid = msg.datapath.id
+        port = msg.desc
+        reason = msg.reason
+
+        if reason == ofproto.OFPPR_DELETE or reason == ofproto.OFPPR_MODIFY \
+                and (msg.desc.state & ofproto.OFPPS_LINK_DOWN):
+                port_no = port.port_no
+                self._contexts.pop((dpid, port_no), None)
 
     def _check_challenge_response(self, response, identifier, challenge,
                                   password):
