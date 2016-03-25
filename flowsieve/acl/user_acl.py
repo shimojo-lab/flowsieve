@@ -80,14 +80,15 @@ class UserACL(BaseACL):
         else:
             self._logger.warning("Unknown default value %s", self.default)
 
+        if self.user is None and self.role is not None:
+            my_family = UserSet(roles=[self.role])
+            if self.is_family:
+                self.user_set += my_family
+            else:
+                self.user_set -= my_family
+
         if self.user is not None:
             self.user_set += UserSet(users=[self.user])
-
-        if self.is_family:
-            if self.user is not None and self.user.role is not None:
-                self.user_set += UserSet(roles=[self.user.role])
-            elif self.role is not None:
-                self.user_set += UserSet(roles=[self.role])
 
         self.user_set += UserSet(users=self.allowed_users)
         self.user_set += UserSet(roles=self.allowed_roles)
@@ -107,6 +108,6 @@ class UserACL(BaseACL):
         if self.is_family:
             repr_family = " family"
 
-        return "<UserACL{0}{1} allowed_users={2}>".format(
+        return "<UserACL{0} allowed_users={1}>".format(
             repr_family, self.allowed_user_names
         )

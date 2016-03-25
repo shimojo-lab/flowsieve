@@ -71,6 +71,9 @@ class UserStore(object):
     def _store_user_data(self, items):
         for item in items:
             user = User.from_dict(item)
+            if "family" in item:
+                self._logger.warning("Invalid parameter 'family' in user %s",
+                                     user.name)
 
             if user is None:
                 continue
@@ -139,7 +142,8 @@ class Role(object):
         return Role(name, acls)
 
     def __repr__(self):
-        return "<Role name=\"{0}\" acl={1}>".format(self.name, self.acl)
+        return "<Role name=\"{0}\" acl={1}>".format(self.name,
+                                                    self.acls.values())
 
 
 class User(object):
