@@ -1,5 +1,5 @@
 """
-Yamada 802.1X Authenticator
+FlowSieve 802.1X Authenticator
 """
 
 from flowsieve import authorizer, eap_events, eap_md5_method, secure_switch

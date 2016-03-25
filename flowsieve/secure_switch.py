@@ -17,7 +17,7 @@
 # limitations under the License.
 
 """
-An L2 switch working in conjuction with Yamada Authenticator.
+An L2 switch working in conjuction with FlowSieve Authenticator.
 """
 
 
