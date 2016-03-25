@@ -1,11 +1,9 @@
-# FlowSieve [![Build Status](http://drone.ais.cmc.osaka-u.ac.jp/api/badges/core-grid/flowsieve/status.svg)](http://drone.ais.cmc.osaka-u.ac.jp/core-grid/flowsieve)
-
----
+# FlowSieve [![Circle CI](https://circleci.com/gh/shimojo-lab/flowsieve.svg?style=svg)](https://circleci.com/gh/shimojo-lab/flowsieve)
 
 OpenFlow controller for the "Network access control based on role-base security
 policy" project
 
-## Vagrant & Mininet
+## Development setup
 
 In this setup, we simulate the whole network using Mininet. Since Mininet
 requires Linux  as the operating system, we use vagrant to start and provision
@@ -20,7 +18,7 @@ development.
 3. Run `vagrant up` to start and provision the VM.
 4. `vagrant ssh`
 
-### Execution
+### Launching the controller and network
 
 All commands below shall be executed inside the VM.
 
@@ -29,7 +27,7 @@ All commands below shall be executed inside the VM.
   up a new session for the following commands)
 3. `sudo ./tool/run_network`
 
-## Open vSwitch & KVM or Physical OpenFlow switch and physical server
+## Production setup
 
 In this setup, we construct the network using virtual machines/switches or
 physical machines/switches. Then, we execute the OpenFlow controller in an
@@ -47,7 +45,7 @@ for evaluation.
   machine where the controller will be running.
 
 
-### Execution
+### Launching the controller
 
 1. Run `./tool/run_controller`
 
