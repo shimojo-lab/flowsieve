@@ -32,7 +32,7 @@ def generate_xsupplicant_user_conf():
         os.path.abspath(
             os.path.join(
                 os.path.abspath(os.path.dirname(__file__)), "..")))
-    from yamada.user_store import UserStore
+    from flowsieve.user_store import UserStore
 
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     tpl_user_conf = env.get_template("xsupplicant.tpl.user.conf")
@@ -75,7 +75,7 @@ def execute_connect_tool(host):
     host.cmdPrint("connect-tool -C {0} -I {1}".format(user_name, if_name))
 
 
-class YamadaTopo(Topo):
+class ExampleCorpTopo(Topo):
     def build(self):
         # Core switch (s1) and edge switches (s2-s5)
         s1 = self.addSwitch("s1")
@@ -140,7 +140,7 @@ class YamadaTopo(Topo):
 
 def launch_network():
     "Create and test a simple network"
-    topo = YamadaTopo()
+    topo = ExampleCorpTopo()
     private_dirs = ["/tmp", "/etc/xsupplicant", "/var/log", "/var/run"]
     host = partial(Host, privateDirs=private_dirs)
     net = Mininet(topo=topo, host=host, controller=RemoteController)

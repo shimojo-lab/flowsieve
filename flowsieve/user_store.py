@@ -1,7 +1,7 @@
 import logging
 
-from yamada.acl.service_acl import ServiceACL
-from yamada.acl.user_acl import UserACL
+from flowsieve.acl.service_acl import ServiceACL
+from flowsieve.acl.user_acl import UserACL
 
 from yaml import YAMLError, load
 
