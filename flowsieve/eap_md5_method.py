@@ -191,7 +191,7 @@ class EAPMD5Method(app_manager.RyuApp):
         if reason == ofproto.OFPPR_DELETE or reason == ofproto.OFPPR_MODIFY \
                 and (msg.desc.state & ofproto.OFPPS_LINK_DOWN):
                 port_no = port.port_no
-                self._contexts.pop((dpid, port_no))
+                self._contexts.pop((dpid, port_no), None)
 
     def _check_challenge_response(self, response, identifier, challenge,
                                   password):
