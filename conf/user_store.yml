@@ -14,7 +14,6 @@ users:
   - name: dev1
     role: Development
     password: TIS
-    family: true
 
   - name: dev2
     role: Development
