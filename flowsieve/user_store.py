@@ -1,6 +1,6 @@
 import logging
 
-from flowsieve.acl.service_acl import ServiceACL
+from flowsieve.acl.service_acl import Service, ServiceACL
 from flowsieve.acl.user_acl import UserACL
 
 from yaml import YAMLError, load
@@ -69,6 +69,7 @@ class UserStore(object):
         self._load_relations()
 
     def _store_user_data(self, items):
+        Service.read_etc_service()
         for item in items:
             user = User.from_dict(item)
             if "family" in item:
