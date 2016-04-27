@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import logging
 import os
 import sys
 
@@ -15,10 +16,15 @@ from mininet.util import dumpNodeConnections
 
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "template")
+execute_path = os.path.dirname(__file__)
+abs_exe_path = os.path.abspath(execute_path)
+dir_of_fs = abs_exe_path.split("tool")[0]  # directory of flowsieve
 
 
 def generate_xsupplicant_conf(host):
-    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+    dir_of_temp = os.path.join(dir_of_fs, "tool/template")
+    os.chdir(dir_of_temp)      # change to this project/tool/template
+    env = Environment(loader=FileSystemLoader(dir_of_temp))
     tpl_conf = env.get_template("xsupplicant.tpl.conf")
 
     if_name = host.name + "-eth0"
@@ -33,13 +39,13 @@ def generate_xsupplicant_user_conf():
             os.path.join(
                 os.path.abspath(os.path.dirname(__file__)), "..")))
     from flowsieve.user_store import UserStore
-
+    logging.basicConfig()
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     tpl_user_conf = env.get_template("xsupplicant.tpl.user.conf")
+    os.chdir(dir_of_fs)  # change to this project
     profiles = UserStore().users.values()
     user_conf = tpl_user_conf.render({"if_name": "eth0",
                                       "profiles": profiles})
-
     f = open("/etc/xsupplicant.user.conf", "w")
     f.write(user_conf)
     f.close()
