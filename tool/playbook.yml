@@ -3,7 +3,7 @@
   vars:
     home_dir: /home/ubuntu
     xsupplicant_src: "{{ home_dir }}/xsupplicant"
-    xsupplicant_repo: https://titan.ais.cmc.osaka-u.ac.jp/core-grid/xsupplicant.git
+    xsupplicant_repo: https://gitlab.ais.cmc.osaka-u.ac.jp/tis/xsupplicant.git
     mnexec_url: https://raw.githubusercontent.com/mininet/mininet/96ea5367dbea7b77e6b7454c1de85b30b7ba7035/mnexec.c
     mnexec_sha: 4377b573054f75707f37d8c2b8d7d8a7f12647e7b6eeaaeca529129001606251
   gather_facts: no
@@ -59,7 +59,7 @@
             dest={{ home_dir }}/.gitconfig
       become: no
     - name: Clone xsupplicant source code
-      git: repo=https://titan.ais.cmc.osaka-u.ac.jp/core-grid/xsupplicant.git
+      git: repo={{ xsupplicant_repo }}
            dest={{ xsupplicant_src }} depth=1 accept_hostkey=yes
       become: no
     - name: Generate configure file for xsupplicant
