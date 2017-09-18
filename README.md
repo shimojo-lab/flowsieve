@@ -1,4 +1,5 @@
 # FlowSieve [![Circle CI](https://circleci.com/gh/shimojo-lab/flowsieve.svg?style=svg)](https://circleci.com/gh/shimojo-lab/flowsieve) [![Code Climate](https://codeclimate.com/github/shimojo-lab/flowsieve/badges/gpa.svg)](https://codeclimate.com/github/shimojo-lab/flowsieve)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fshimojo-lab%2Fflowsieve.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fshimojo-lab%2Fflowsieve?ref=badge_shield)
 
 OpenFlow controller for the "Network access control based on role-base security
 policy" project
@@ -55,3 +56,7 @@ This software is released under the Apache 2.0 License. See LICENSE for the
 full license text. This software includes a part of a work that is distributed
 in the Apache 2.0 License.
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fshimojo-lab%2Fflowsieve.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fshimojo-lab%2Fflowsieve?ref=badge_large)
