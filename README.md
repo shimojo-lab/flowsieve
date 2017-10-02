@@ -1,4 +1,4 @@
-# FlowSieve [![Circle CI](https://circleci.com/gh/shimojo-lab/flowsieve.svg?style=svg)](https://circleci.com/gh/shimojo-lab/flowsieve) [![Code Climate](https://codeclimate.com/github/shimojo-lab/flowsieve/badges/gpa.svg)](https://codeclimate.com/github/shimojo-lab/flowsieve)
+# FlowSieve [![Circle CI](https://circleci.com/gh/shimojo-lab/flowsieve.svg?style=svg)](https://circleci.com/gh/shimojo-lab/flowsieve) [![Code Health](https://landscape.io/github/shimojo-lab/flowsieve/master/landscape.svg?style=flat)](https://landscape.io/github/shimojo-lab/flowsieve/master)
 
 OpenFlow controller for the "Network access control based on role-base security
 policy" project
