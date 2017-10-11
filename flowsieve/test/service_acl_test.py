@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from flowsieve.acl.service_acl import ServiceACL
+from flowsieve.acl.service_acl import Service, ServiceACL
 
 from nose.tools import ok_
 
@@ -22,20 +22,41 @@ class ServiceACLTestCase(TestCase):
         return pkt
 
     def test_allowed_services(self):
+        Service.read_etc_service()
         acl = ServiceACL(service_default="deny",
-                         allowed_services=["tcp/80", "udp/53"])
+                         allowed_services=[
+                             "tcp/80", "udp/53",
+                             "tcp/fido", "tcp/20011", "tcp/81",
+                             "udp/23", "udp/smtp", "udp/fido",
+                             "udp/60177", "tcp/60178", "ddp/1",
+                             "ddp/nbp", "sctp/5672"])
         acl.build_service_set()
-
         pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=80)
+        ok_(acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=53)
+        ok_(acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=60179)
+        ok_(acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=20011)
         ok_(acl.allows_packet(pkt, None))
 
         pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=21)
         ok_(not acl.allows_packet(pkt, None))
-
-        pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=53)
-        ok_(acl.allows_packet(pkt, None))
-
         pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=123)
+        ok_(not acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=81)
+        ok_(not acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=23)
+        ok_(not acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=25)
+        ok_(not acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=60179)
+        ok_(not acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=60177)
+        ok_(not acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=60179)
+        ok_(not acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=60178)
         ok_(not acl.allows_packet(pkt, None))
 
     def test_default_deny(self):
