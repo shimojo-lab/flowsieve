@@ -1,7 +1,7 @@
 ---
 - hosts: all
   vars:
-    home_dir: /home/ubuntu
+    home_dir: /home/vagrant
     xsupplicant_src: "{{ home_dir }}/xsupplicant"
     xsupplicant_repo: https://gitlab.ais.cmc.osaka-u.ac.jp/tis/xsupplicant.git
     mnexec_url: https://raw.githubusercontent.com/mininet/mininet/96ea5367dbea7b77e6b7454c1de85b30b7ba7035/mnexec.c
