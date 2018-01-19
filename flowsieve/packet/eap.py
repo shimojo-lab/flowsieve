@@ -75,11 +75,13 @@ class eap(packet_base.PacketBase):
         return msg, None, None
 
     def serialize(self, payload, prev):
+        # Calculate length if not set
         if self.length == 0:
             self.length = eap._MIN_LEN
             if self.code in [EAP_CODE_REQUEST, EAP_CODE_RESPONSE]:
+                self.length += eap._TYPE_LEN
                 if self.data is not None:
-                    self.length += eap._TYPE_LEN + len(self.data)
+                    self.length += len(self.data)
 
         hdr = bytearray(struct.pack(self._PACK_STR, self.code, self.identifier,
                         self.length))
