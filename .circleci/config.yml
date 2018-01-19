@@ -6,11 +6,12 @@ jobs:
      steps:
        - checkout
        - restore_cache:
-           key: deps-{{ .Branch }}-{{ checksum "requirements.txt" }}
-       - run: sudo pip install -r requirements.txt
+           key: deps-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
+       - run: pip install -r requirements.txt
+       - run: pip install -r requirements-dev.txt
        - save_cache:
-           key: deps-{{ .Branch }}-{{ checksum "requirements.txt" }}
+           key: deps-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
            paths:
-             - /root/.cache/pip
+             - ~/.cache/pip
        - run: nosetests -v
        - run: flake8
