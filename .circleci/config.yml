@@ -7,11 +7,24 @@ jobs:
        - checkout
        - restore_cache:
            key: deps-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
-       - run: pip install -r requirements.txt
-       - run: pip install -r requirements-dev.txt
+       - run:
+           name: Install dependencies
+           command: |
+             python -m virtualenv venv
+             . venv/bin/activate
+             pip install -r requirements.txt
+             pip install -r requirements-dev.txt
        - save_cache:
            key: deps-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
            paths:
-             - ~/.cache/pip
-       - run: nosetests -v
-       - run: flake8
+             - venv
+       - run:
+           name: Run unit tests
+           command: |
+             . venv/bin/activate
+             nosetests -v
+       - run:
+           name: Check source code style
+           command: |
+             . venv/bin/activate
+             flake8 --exclude=venv
