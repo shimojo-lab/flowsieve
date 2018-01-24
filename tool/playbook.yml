@@ -2,8 +2,6 @@
 - hosts: all
   vars:
     home_dir: /home/vagrant
-    xsupplicant_src: "{{ home_dir }}/xsupplicant"
-    xsupplicant_repo: https://gitlab.ais.cmc.osaka-u.ac.jp/tis/xsupplicant.git
     mnexec_url: https://raw.githubusercontent.com/mininet/mininet/96ea5367dbea7b77e6b7454c1de85b30b7ba7035/mnexec.c
     mnexec_sha: 4377b573054f75707f37d8c2b8d7d8a7f12647e7b6eeaaeca529129001606251
   gather_facts: no
@@ -21,6 +19,7 @@
         - python2.7-dev
         - nmap
         - netcat
+        - wpasupplicant
     - name: Download mnexec
       get_url: url={{ mnexec_url }}
                sha256sum={{ mnexec_sha }}
@@ -41,46 +40,3 @@
 
     - name: Install pip packages for development
       pip: requirements=/vagrant/requirements-dev.txt state=latest
-
-    - name: Install apt packages for xsupplicant
-      apt: name={{ item }} state=latest
-      with_items:
-        - git
-        - autoconf
-        - automake
-        - libtool
-        - pkg-config
-        - libxml2-dev
-        - libssl-dev
-        - libiw-dev
-    - name: Prevent git hangs
-      copy: content='Host *\nServerAliveInterval 60\n'
-            dest={{ home_dir }}/.ssh/config
-      become: no
-    - name: Set git postBuffer
-      copy: content='[http]\npostBuffer = 2M\n'
-            dest={{ home_dir }}/.gitconfig
-      become: no
-    - name: Clone xsupplicant source code
-      git: repo={{ xsupplicant_repo }}
-           dest={{ xsupplicant_src }} depth=1 accept_hostkey=yes
-      become: no
-    - name: Generate configure file for xsupplicant
-      command: ./autoregen.sh
-        chdir={{ xsupplicant_src }}/xsupplicant
-        creates=configure
-      become: no
-    - name: Configure xsupplicant
-      shell: LIBS="-lz -ldl" ./configure
-        chdir={{ xsupplicant_src }}/xsupplicant
-        creates=Makefile
-      become: no
-    - name: Make xsupplicant
-      command: make
-        chdir={{ xsupplicant_src }}/xsupplicant
-        creates=src/xsupplicant
-      become: no
-    - name: Make install xsupplicant
-      command: make install
-        chdir={{ xsupplicant_src }}/xsupplicant
-        creates=/usr/local/sbin/xsupplicant

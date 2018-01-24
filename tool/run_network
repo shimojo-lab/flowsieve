@@ -5,8 +5,6 @@ import sys
 
 from functools import partial
 
-from jinja2 import Environment, FileSystemLoader
-
 from mininet.cli import CLI
 from mininet.log import setLogLevel
 from mininet.net import Mininet
@@ -15,70 +13,28 @@ from mininet.topo import Topo
 from mininet.util import dumpNodeConnections
 
 
-TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "template")
-execute_path = os.path.dirname(__file__)
-abs_exe_path = os.path.abspath(execute_path)
-dir_of_fs = abs_exe_path.split("tool")[0]  # directory of flowsieve
-
-
-def generate_xsupplicant_conf(host):
-    dir_of_temp = os.path.join(dir_of_fs, "tool/template")
-    os.chdir(dir_of_temp)      # change to this project/tool/template
-    env = Environment(loader=FileSystemLoader(dir_of_temp))
-    tpl_conf = env.get_template("xsupplicant.tpl.conf")
-
-    if_name = host.name + "-eth0"
-    conf = tpl_conf.render({"if_name": "eth0",
-                            "mac_addr": host.MAC(if_name).replace(":", "-")})
-    host.cmd("echo '%s' > /etc/xsupplicant/xsupplicant.conf" % conf)
-
-
-def generate_xsupplicant_user_conf():
-    sys.path.append(
-        os.path.abspath(
-            os.path.join(
-                os.path.abspath(os.path.dirname(__file__)), "..")))
-    from flowsieve.user_store import UserStore
-    logging.basicConfig()
-    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
-    tpl_user_conf = env.get_template("xsupplicant.tpl.user.conf")
-    os.chdir(dir_of_fs)  # change to this project
-    profiles = UserStore().users.values()
-    user_conf = tpl_user_conf.render({"if_name": "eth0",
-                                      "profiles": profiles})
-    f = open("/etc/xsupplicant.user.conf", "w")
-    f.write(user_conf)
-    f.close()
-
-
-def execute_connect_tool(host):
-    host_to_user = {
-        "h1": "dev1",
-        "h2": "dev2",
-        "h3": "dev3",
-        "h4": "dev_srv1",
-        "h5": "dev_srv2",
-        "h6": "dev_srv3",
-        "h7": "sal1",
-        "h8": "sal2",
-        "h9": "sal3",
-        "h10": "sal_srv1",
-        "h11": "sal_srv2",
-        "h12": "hr1",
-        "h13": "hr2",
-        "h14": "hr3",
-        "h15": "hr_srv1",
-        "h16": "hr_srv2",
-        "h17": "ga1",
-        "h18": "ga2",
-        "h19": "ga3",
-        "h20": "ga_srv1"
-    }
-
-    user_name = host_to_user[host.name]
-    if_name = host.name + "-eth0"
-
-    host.cmdPrint("connect-tool -C {0} -I {1}".format(user_name, if_name))
+HOST_TO_USER = {
+    "h1": "dev1",
+    "h2": "dev2",
+    "h3": "dev3",
+    "h4": "dev_srv1",
+    "h5": "dev_srv2",
+    "h6": "dev_srv3",
+    "h7": "sal1",
+    "h8": "sal2",
+    "h9": "sal3",
+    "h10": "sal_srv1",
+    "h11": "sal_srv2",
+    "h12": "hr1",
+    "h13": "hr2",
+    "h14": "hr3",
+    "h15": "hr_srv1",
+    "h16": "hr_srv2",
+    "h17": "ga1",
+    "h18": "ga2",
+    "h19": "ga3",
+    "h20": "ga_srv1"
+}
 
 
 class ExampleCorpTopo(Topo):
@@ -147,19 +103,39 @@ class ExampleCorpTopo(Topo):
 def launch_network():
     "Create and test a simple network"
     topo = ExampleCorpTopo()
-    private_dirs = ["/tmp", "/etc/xsupplicant", "/var/log", "/var/run"]
+    private_dirs = ["/tmp", "/etc/wpa_supplicant", "/var/log", "/var/run"]
     host = partial(Host, privateDirs=private_dirs)
     net = Mininet(topo=topo, host=host, controller=RemoteController)
     net.start()
 
-    generate_xsupplicant_user_conf()
+    sys.path.append(
+        os.path.abspath(
+            os.path.join(
+                os.path.abspath(os.path.dirname(__file__)), "..")))
+    from flowsieve.user_store import UserStore
+    logging.basicConfig()
+    users = UserStore().users
 
     for host in net.hosts:
-        generate_xsupplicant_conf(host)
-        host.cmd("xsupplicant -d A -c /etc/xsupplicant/xsupplicant.conf")
+        user = users[HOST_TO_USER[host.name]]
 
-    for host in net.hosts:
-        execute_connect_tool(host)
+        conf = """
+        ap_scan=0
+        eapol_version=2
+        network={
+           key_mgmt=IEEE8021X
+           eap=MD5
+           identity="%s"
+           password="%s"
+           eapol_flags=0
+        }
+        """ % (user.name, user.password)
+
+        host.cmd("echo '%s' > /etc/wpa_supplicant/wpa_supplicant.conf" % conf)
+
+        if_name = host.name + "-eth0"
+        host.cmdPrint("wpa_supplicant -B -Dwired -i%s"
+                      " -c/etc/wpa_supplicant/wpa_supplicant.conf" % if_name)
 
     print "Dumping host connections"
     dumpNodeConnections(net.hosts)
@@ -169,7 +145,7 @@ def launch_network():
     # Run "px net.pingAll(timeout=1)" in CLI to test connectivity
 
     for host in net.hosts:
-        host.cmd("killall xsupplicant")
+        host.cmd("killall wpa_supplicant")
     net.stop()
 
 

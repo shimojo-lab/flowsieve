@@ -10,8 +10,8 @@ EAP_TEST_CASES = [
     # EAP Failure
     (eap(code=0x04, identifier=0x34, length=4), "\x04\x34\x00\x04"),
     # EAP Identity Request
-    (eap(code=0x01, identifier=0x56, length=4, type_=0x01,
-         data=eap_identify()), "\x01\x56\x00\x04" "\x01"),
+    (eap(code=0x01, identifier=0x56, length=5, type_=0x01,
+         data=eap_identify()), "\x01\x56\x00\x05" "\x01"),
     # EAP Identity Response
     (eap(code=0x02, identifier=0x78, length=10, type_=0x01,
          data=eap_identify("hello")), "\x02\x78\x00\x0a" "\x01hello"),
