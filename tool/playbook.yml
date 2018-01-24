@@ -36,8 +36,11 @@
         chdir={{ home_dir }}
         creates=/usr/local/bin/mnexec
 
-    - name: Install dependent pip packages
+    - name: Install pip packages
       pip: requirements=/vagrant/requirements.txt state=latest
+
+    - name: Install pip packages for development
+      pip: requirements=/vagrant/requirements-dev.txt state=latest
 
     - name: Install apt packages for xsupplicant
       apt: name={{ item }} state=latest
