@@ -83,10 +83,10 @@ class eap(packet_base.PacketBase):
                 if self.data is not None:
                     self.length += len(self.data)
 
-        hdr = bytearray(struct.pack(self._PACK_STR, self.code, self.identifier,
-                        self.length))
+        hdr = struct.pack(self._PACK_STR, self.code, self.identifier,
+                          self.length)
         if self.code in [EAP_CODE_REQUEST, EAP_CODE_RESPONSE]:
-            hdr += bytearray(struct.pack(eap._TYPE_PACK_STR, self.type_))
+            hdr += struct.pack(eap._TYPE_PACK_STR, self.type_)
             if self.data is not None:
                 if self.type_ in eap._EAP_TYPES:
                     hdr += self.data.serialize()
@@ -115,7 +115,7 @@ class eap_identify(stringify.StringifyMixin):
         return cls(buf.decode("utf-8"))
 
     def serialize(self):
-        hdr = bytearray(self.identity.encode("utf-8"))
+        hdr = self.identity.encode("utf-8")
         return hdr
 
 
@@ -145,7 +145,7 @@ class eap_md5_challenge(stringify.StringifyMixin):
         return cls(buf[cls._MIN_LEN:cls._MIN_LEN + length])
 
     def serialize(self):
-        hdr = bytearray(struct.pack(eap_md5_challenge._PACK_STR,
-                                    len(self.challenge)))
+        hdr = struct.pack(eap_md5_challenge._PACK_STR,
+                          len(self.challenge))
         hdr += self.challenge
         return hdr

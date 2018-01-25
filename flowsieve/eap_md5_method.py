@@ -2,8 +2,8 @@
 State machine for EAP-MD5 authentication flow
 """
 
+import hashlib
 import logging
-import md5
 import struct
 
 from flowsieve import eap_events, events
@@ -197,9 +197,9 @@ class EAPMD5Method(app_manager.RyuApp):
                                   password):
         """Check if MD5 challenge response is correct
         """
-        m = md5.new()
+        m = hashlib.new("md5")
         m.update(struct.pack("!B", identifier))
-        m.update(password)
+        m.update(password.encode("utf-8"))
         m.update(challenge)
 
         return m.digest() == response

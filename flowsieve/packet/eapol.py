@@ -53,8 +53,8 @@ class eapol(packet_base.PacketBase):
         if self.length == 0:
             self.length = len(payload)
 
-        hdr = bytearray(struct.pack(self._PACK_STR, self.version, self.type_,
-                        self.length))
+        hdr = struct.pack(self._PACK_STR, self.version, self.type_,
+                          self.length)
         return hdr
 
 ethernet.register_packet_type(eapol, ETH_TYPE_EAPOL)
