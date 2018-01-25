@@ -108,17 +108,7 @@ def launch_network():
     net = Mininet(topo=topo, host=host, controller=RemoteController)
     net.start()
 
-    sys.path.append(
-        os.path.abspath(
-            os.path.join(
-                os.path.abspath(os.path.dirname(__file__)), "..")))
-    from flowsieve.user_store import UserStore
-    logging.basicConfig()
-    users = UserStore().users
-
     for host in net.hosts:
-        user = users[HOST_TO_USER[host.name]]
-
         conf = """
         ap_scan=0
         eapol_version=2
@@ -129,7 +119,7 @@ def launch_network():
            password="%s"
            eapol_flags=0
         }
-        """ % (user.name, user.password)
+        """ % (HOST_TO_USER[host.name], "TIS")
 
         host.cmd("echo '%s' > /etc/wpa_supplicant/wpa_supplicant.conf" % conf)
 
