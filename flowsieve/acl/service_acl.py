@@ -1,5 +1,4 @@
-import linecache
-import logging
+import socket
 
 from flowsieve.acl.acl_result import ACLResult, PacketMatch
 from flowsieve.acl.base_acl import BaseACL
@@ -62,11 +61,11 @@ class ServiceACL(BaseACL):
         match = PacketMatch(dl_type=ETH_TYPE_IP)
 
         if tcph is not None:
-            service = Service(TP_PROTO_TCP, tcph.dst_port)
-            match += PacketMatch(nw_proto=IPPROTO_TCP, tp_dst=service.port)
+            service = Service("tcp", tcph.dst_port)
+            match += PacketMatch(nw_proto=IPPROTO_TCP, tp_dst=tcph.dst_port)
         elif udph is not None:
-            service = Service(TP_PROTO_UDP, udph.dst_port)
-            match += PacketMatch(nw_proto=IPPROTO_UDP, tp_dst=service.port)
+            service = Service("udp", udph.dst_port)
+            match += PacketMatch(nw_proto=IPPROTO_UDP, tp_dst=udph.dst_port)
 
         return ACLResult(service in self.service_set, match)
 
@@ -75,212 +74,21 @@ class ServiceACL(BaseACL):
             self.allowed_services, self.denied_services
         )
 
-# Protocol alias
-TP_PROTO_TCP = 1
-TP_PROTO_UDP = 2
-PROTO_DDP = 3
-PROTO_SCTP = 4
-
 
 class Service(object):
-    ETC_SERVICE_FILE = "/etc/services"
-    extracted_service = []
-    extracted_port = []
-    extracted_proto = []
-    logger = logging.getLogger(__name__)
-    service_file = []
-
-    @classmethod
-    def read_etc_service(cls):
-        if cls.service_file != []:
-            return
-        try:
-            cls.service_file = linecache.getlines(cls.ETC_SERVICE_FILE)
-            cls.logger.debug("Service_file is ready")
-            cls.parse_file()
-        except IOError:
-            cls.logger.error("Could not open %s" % cls.ETC_SERVICE_FILE)
-            return None
-
-    @classmethod
-    def parse_file(cls):
-        import re
-        for line in cls.service_file:
-            if line[0].isalpha():
-                # ignore blank line and comment
-                remove_comment = line.split("#")[0]
-                # discard inline comment
-                splitted_line = re.split(" |\t|\n", remove_comment)
-                # split the line by space/tab/change line
-                for each in splitted_line:
-                    if each != "":
-                        if len(each.split("/")) == 1:
-                            # there is no '/' so we got a service
-                            cls.extracted_service.append(each)
-                        elif len(each.split("/")) == 2:
-                            # we found a '/', it would be port/proto
-                            if each.split("/")[0].isdigit():
-                                # got a valid port, then check proto,
-                                # it would be too long if two if(s)
-                                # were mixed(?)
-                                if each.split("/")[1] in [
-                                        "tcp", "udp",
-                                        "ddp", "sctp"]:
-                                    cls.extracted_port.append(
-                                        int(each.split("/")[0]))
-                                    cls.extracted_proto.append(
-                                        cls.proto_to_int(each.split("/")[1]))
-                                else:
-                                    cls.logger.warning(
-                                        "Protocol %s is unknown" %
-                                        each.split("/")[1])
-                            else:
-                                cls.logger.warning(
-                                    "Port number %s is unknown" %
-                                    each.split("/")[0])
-                            break
-                        else:
-                            # too many '/', it would be a mistake
-                            cls.logger.warning(
-                                "This line %s is malformed:" %
-                                each)
-        return cls.service_file
-
-    @classmethod
-    def proto_to_int(cls, each):
-        if each == "tcp":
-            return TP_PROTO_TCP
-        if each == "udp":
-            return TP_PROTO_UDP
-        if each == "ddp":
-            return PROTO_DDP
-        if each == "sctp":
-            return PROTO_SCTP
-        else:
-            cls.logger.warning(
-                "Protocol %s is unknown" % each)
-
-    @classmethod                                 # deal with proto ddp & sctp
-    def map_ddp_sctp_by_port(cls, port, proto):  # find proto first, then port
-        if proto in cls.extracted_proto:         # because they overlaps some
-            if proto == PROTO_DDP:               # ports with TCP & UDP
-                service_index = cls.extracted_proto.index(PROTO_DDP)
-            else:
-                service_index = cls.extracted_proto.index(PROTO_SCTP)
-        else:
-            cls.logger.warning(
-                "Combination %s/%s is not in the Service list" %
-                (proto, port))
-            return None
-        while service_index < len(cls.extracted_service):
-            if cls.extracted_proto[service_index] == proto:
-                if cls.extracted_port[service_index] == port:
-                    return Service(proto, port)
-                else:
-                    service_index += 1
-            else:
-                cls.logger.warning(
-                    "Combination %s/%s is not in the Service list" %
-                    (proto, port))
-                return None
-
-    @classmethod
-    def map_ddp_sctp_by_service(cls, service, proto):  # deal with ddp & sctp
-        if proto in cls.extracted_proto:               # like the method above
-            if proto == PROTO_DDP:
-                service_index = cls.extracted_proto.index(PROTO_DDP)
-            else:
-                service_index = cls.extracted_proto.index(PROTO_SCTP)
-        else:
-            cls.logger.warning(
-                "Combination %s/%s is not in the Service list" %
-                (proto, service))
-            return None
-        while service_index < len(cls.extracted_service):
-            if cls.extracted_proto[service_index] == proto:
-                if cls.extracted_service[service_index] == service:
-                    port = cls.extracted_port[service_index]
-                    return Service(proto, port)
-                else:
-                    service_index += 1
-            else:
-                cls.logger.warning(
-                    "Combination %s/%s is not in the Service list" %
-                    (proto, service))
-                return None
-
-    @classmethod
-    def map_by_port(cls, port, proto):  # find port first, then match proto
-        if port in cls.extracted_port:
-            service_index = cls.extracted_port.index(port)
-            while service_index < len(cls.extracted_service):
-                if cls.extracted_port[service_index] == port:
-                    if cls.extracted_proto[service_index] == proto:
-                        return Service(proto, port)
-                    else:
-                        service_index += 1
-                else:
-                    cls.logger.warning(
-                        "Combination %s/%s is not in the Service list" %
-                        (proto, port))
-                    return None
-        else:
-            cls.logger.warning(
-                "Combination %s/%s is not in the Service list" %
-                (proto, port))
-            return None
-
-    @classmethod
-    def map_by_service(cls, service, proto):  # find service first,
-        if service in cls.extracted_service:  # then match proto
-            service_index = cls.extracted_service.index(service)
-            while service_index < len(cls.extracted_service):
-                if cls.extracted_service[service_index] == service:
-                    if cls.extracted_proto[service_index] == proto:
-                        port = cls.extracted_port[service_index]
-                        return Service(proto, port)
-                    else:
-                        service_index += 1
-                else:
-                    cls.logger.warning(
-                        "Combination %s/%s is not in the Service list" %
-                        (proto, service))
-                    return None
-        else:
-            cls.logger.warning(
-                "Combination %s/%s is not in the Service list" %
-                (proto, service))
-            return None
-
     @classmethod
     def from_str(cls, s):
-        if s is None:
-            cls.logger.warning("Cannot parse None")
-            return None
-        splitted = s.split("/")
-        if len(splitted) != 2:
-            cls.logger.warning("Service definition [%s] is malformed", s)
-            return None
-        proto = splitted[0].lower()
-        proto = cls.proto_to_int(proto)
-        port_or_service = splitted[1]
-        if proto in [PROTO_DDP, PROTO_SCTP]:
-            if port_or_service.isdigit():
-                port = int(port_or_service)
-                return cls.map_ddp_sctp_by_port(port, proto)
+        try:
+            proto, port = s.split("/")
+
+            if port.isdigit():
+                port = int(port)
             else:
-                service = str(port_or_service)
-                return cls.map_ddp_sctp_by_service(service, proto)
-        elif proto in [TP_PROTO_TCP, TP_PROTO_UDP]:
-            if port_or_service.isdigit():
-                port = int(port_or_service)
-                return cls.map_by_port(port, proto)
-            else:
-                service = str(port_or_service)
-                return cls.map_by_service(service, proto)
-        else:
-            cls.logger.warning("Service protocol [%s] is unknwon", proto)
+                port = socket.getservbyname(port, proto)
+        except:
             return None
+
+        return Service(proto, port)
 
     def __init__(self, proto, port):
         self.proto = proto

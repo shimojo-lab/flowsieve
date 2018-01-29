@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from flowsieve.acl.service_acl import Service, ServiceACL
+from flowsieve.acl.service_acl import ServiceACL
 
 from nose.tools import ok_
 
@@ -22,22 +22,25 @@ class ServiceACLTestCase(TestCase):
         return pkt
 
     def test_allowed_services(self):
-        Service.read_etc_service()
         acl = ServiceACL(service_default="deny",
                          allowed_services=[
-                             "tcp/80", "udp/53",
-                             "tcp/fido", "tcp/20011", "tcp/81",
-                             "udp/23", "udp/smtp", "udp/fido",
-                             "udp/60177", "tcp/60178", "ddp/1",
-                             "ddp/nbp", "sctp/5672"])
+                             "tcp/ssh", "tcp/http", "udp/domain", "tcp/110",
+                             "tcp/143", "tcp/587", "tcp/995"])
+
         acl.build_service_set()
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=22)
+        ok_(acl.allows_packet(pkt, None))
         pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=80)
         ok_(acl.allows_packet(pkt, None))
         pkt = self._get_tp_pkt(proto=IPPROTO_UDP, dst_port=53)
         ok_(acl.allows_packet(pkt, None))
-        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=60179)
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=110)
         ok_(acl.allows_packet(pkt, None))
-        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=20011)
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=143)
+        ok_(acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=587)
+        ok_(acl.allows_packet(pkt, None))
+        pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=995)
         ok_(acl.allows_packet(pkt, None))
 
         pkt = self._get_tp_pkt(proto=IPPROTO_TCP, dst_port=21)
