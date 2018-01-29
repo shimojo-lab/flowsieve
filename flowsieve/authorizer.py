@@ -4,7 +4,8 @@ Extensible Authorizer
 
 import logging
 import operator
-from itertools import imap
+from functools import reduce
+
 
 from flowsieve import events
 from flowsieve.acl.acl_result import ACLResult
@@ -140,8 +141,8 @@ class Authorizer(app_manager.RyuApp):
             pass
 
         elif src_user is not None and dst_user is not None:
-            acl_results = imap(lambda acl: acl.allows_packet(pkt, src_user),
-                               dst_user.acls.itervalues())
+            acl_results = [acl.allows_packet(pkt, src_user) for acl in
+                           dst_user.acls.values()]
             result = reduce(operator.add, acl_results)
 
         if dst == BROADCAST_STR:
@@ -179,7 +180,8 @@ class Topology(object):
 
     def _read_config_file(self):
         try:
-            data = load(file(self.config_file))
+            with open(self.config_file) as f:
+                data = load(f)
         except IOError:
             self._logger.error("Could not open %s", self.config_file)
             return

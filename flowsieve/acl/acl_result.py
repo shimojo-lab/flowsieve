@@ -29,7 +29,7 @@ class PacketMatch(StringifyMixin):
         assert isinstance(other, self.__class__)
 
         kwargs = {}
-        for k, v in self.__dict__.iteritems():
+        for k, v in self.__dict__.items():
             kwargs[k] = getattr(self, k) or getattr(other, k)
 
         return PacketMatch(**kwargs)
@@ -57,5 +57,5 @@ class ACLResult(object):
         return ACLResult(self.accept and other.accept,
                          self.match + other.match)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self.accept

@@ -30,28 +30,29 @@ class UserStore(object):
         self._read_definition_file()
 
     def get_user(self, user_name):
-        assert isinstance(user_name, basestring)
+        assert isinstance(user_name, str)
 
         return self.users.get(user_name)
 
     def get_role(self, role_name):
-        assert isinstance(role_name, basestring)
+        assert isinstance(role_name, str)
 
         return self.roles.get(role_name)
 
     def del_user(self, user_name):
-        assert isinstance(user_name, basestring)
+        assert isinstance(user_name, str)
 
         self.users.pop(user_name, None)
 
     def del_role(self, role_name):
-        assert isinstance(role_name, basestring)
+        assert isinstance(role_name, str)
 
         self.roles.pop(role_name, None)
 
     def _read_definition_file(self):
         try:
-            data = load(file(self.user_role_file))
+            with open(self.user_role_file) as f:
+                data = load(f)
         except IOError:
             self._logger.error("Could not open %s", self.user_role_file)
             return
@@ -99,9 +100,9 @@ class UserStore(object):
 
     def _load_relations(self):
         """Load relations between models"""
-        for role in self.roles.itervalues():
+        for role in self.roles.values():
             role.load_relations(self)
-        for user in self.users.itervalues():
+        for user in self.users.values():
             user.load_relations(self)
 
 
@@ -119,7 +120,7 @@ class Role(object):
         return hash(self.name)
 
     def load_relations(self, user_store):
-        for acl in self.acls.itervalues():
+        for acl in self.acls.values():
             acl.role = self
             acl.load_relations(user_store)
 
@@ -143,7 +144,7 @@ class Role(object):
 
     def __repr__(self):
         return "<Role name=\"{0}\" acl={1}>".format(self.name,
-                                                    self.acls.values())
+                                                    list(self.acls.values()))
 
 
 class User(object):
@@ -171,7 +172,7 @@ class User(object):
 
         self.role = role
 
-        for name, acl in self.acls.iteritems():
+        for name, acl in self.acls.items():
             acl.user = self
             acl.parent = self.role.acls.get(name)
             acl.load_relations(user_store)

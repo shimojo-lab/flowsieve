@@ -5,31 +5,29 @@
     mnexec_url: https://raw.githubusercontent.com/mininet/mininet/96ea5367dbea7b77e6b7454c1de85b30b7ba7035/mnexec.c
     mnexec_sha: 4377b573054f75707f37d8c2b8d7d8a7f12647e7b6eeaaeca529129001606251
   gather_facts: no
-  pre_tasks:
-    - name: 'install python-simplejson'
-      raw: apt-get -y install python-simplejson
   tasks:
     - name: Install required apt packages
-      apt: name={{ item }} state=latest
+      apt: name={{ item }} state=latest update_cache=yes
       with_items:
-        - python-setuptools
         - language-pack-ja
+        - gcc
+        - python3-pip
         - mininet
-        - python-pip
-        - python2.7-dev
         - nmap
-        - netcat
         - wpasupplicant
+
     - name: Download mnexec
       get_url: url={{ mnexec_url }}
                sha256sum={{ mnexec_sha }}
                dest={{ home_dir }}/mnexec.c
       become: no
+
     - name: Build mnexec
       command: gcc -O3 -Wall -Wextra -o mnexec mnexec.c
         chdir={{ home_dir }}
         creates=mnexec
       become: no
+
     - name: Install mnexec
       command: install -o root -g root -m 0755 mnexec /usr/local/bin/mnexec
         chdir={{ home_dir }}

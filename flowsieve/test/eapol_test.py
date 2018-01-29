@@ -6,12 +6,12 @@ from nose.tools import eq_
 from ryu.lib.packet import packet
 
 EAPOL_TEST_CASES = [
-    ([eapol(version=0x01, type_=0x01)], "\x01\x01\x00\x00"),
-    ([eapol(version=0x02, type_=0x01)], "\x02\x01\x00\x00"),
-    ([eapol(version=0x02, type_=0x02)], "\x02\x02\x00\x00"),
+    ([eapol(version=0x01, type_=0x01)], b"\x01\x01\x00\x00"),
+    ([eapol(version=0x02, type_=0x01)], b"\x02\x01\x00\x00"),
+    ([eapol(version=0x02, type_=0x02)], b"\x02\x02\x00\x00"),
     ([eapol(version=0x02, type_=0x00, length=4),
       eap(code=0x03, length=4, identifier=0x12)],
-     "\x02\x00\x00\x04" "\x03\x12\x00\x04")
+     b"\x02\x00\x00\x04\x03\x12\x00\x04")
 ]
 
 
