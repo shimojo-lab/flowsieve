@@ -5,6 +5,7 @@ State machine for EAP-MD5 authentication flow
 import hashlib
 import logging
 import struct
+import time
 
 from flowsieve import eap_events, events
 from flowsieve.packet import eap, eapol
@@ -51,14 +52,21 @@ class EAPMD5Context(object):
                                            "authenticated")
         self._state_machine.add_transition("logoff", "*", "idle")
 
+    def on_enter_ident(self):
+        self.auth_started_at = time.perf_counter()
+
     def on_enter_challenge(self, identity, challenge):
         self.identity = identity
         self.challenge = challenge
 
     def on_enter_authenticated(self):
+        self.auth_finished_at = time.perf_counter()
+        elapsed = self.auth_finished_at - self.auth_started_at
+
         self._logger.info("Authenticated user %s (%s) at port %d of"
                           " switch %016x", self.identity, self.host_mac,
                           self.port, self.dpid)
+        self._logger.info("Authentication took %f [s]", elapsed)
 
 
 class EAPMD5Method(app_manager.RyuApp):
